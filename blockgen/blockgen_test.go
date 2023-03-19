@@ -37,3 +37,15 @@ func TestGenerateNextFrom_Hash(t *testing.T) {
 		t.Errorf("got hash ending with %s; want %s", ending, want)
 	}
 }
+
+func TestGenerateNextFrom_HashUseIndex(t *testing.T) {
+	var prev = Block{}
+	var nextOne = GenerateNextFrom(prev)
+	var sumOne = string(nextOne.Hash.Sum(nil))
+	prev.Index += 1
+	var nextTwo = GenerateNextFrom(prev)
+	var sumTwo = string(nextTwo.Hash.Sum(nil))
+	if sumOne == sumTwo {
+		t.Errorf("got same hashes for different index values")
+	}
+}
