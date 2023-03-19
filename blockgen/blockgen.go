@@ -17,6 +17,11 @@ type Block struct {
 type Data [256]byte
 type Nonce int
 
+func (b Block) HasValidHash() bool {
+	var hash = CalculateHashFrom(b)
+	return string(b.Hash.Sum(nil)) == string(hash.Sum(nil)) && hasValidEnding(hash)
+}
+
 func GenerateNextFrom(prev Block, data Data) Block {
 	var next = Block{}
 	next.Index = prev.Index + 1
@@ -25,8 +30,7 @@ func GenerateNextFrom(prev Block, data Data) Block {
 	next.Nonce = Nonce(0)
 	for {
 		var hash = CalculateHashFrom(next)
-		var sum = hash.Sum(nil)
-		if sum[len(sum)-1]%16 == 0 {
+		if hasValidEnding(hash) {
 			next.Hash = hash
 			return next
 		}
@@ -49,7 +53,7 @@ func CalculateHashFrom(b Block) hash.Hash {
 	return hash
 }
 
-func (b Block) HasValidHash() bool {
-	var hash = CalculateHashFrom(b)
-	return string(b.Hash.Sum(nil)) == string(hash.Sum(nil))
+func hasValidEnding(h hash.Hash) bool {
+	var sum = h.Sum(nil)
+	return sum[len(sum)-1]%16 == 0
 }
