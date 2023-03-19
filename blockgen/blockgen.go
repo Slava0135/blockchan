@@ -1,8 +1,8 @@
 package blockgen
 
 import (
-	"hash"
 	"crypto/sha256"
+	"hash"
 	"strconv"
 )
 
@@ -25,7 +25,7 @@ func GenerateNextFrom(prev Block, data Data) Block {
 	var hash = sha256.New()
 	var nonce = 0
 	var sum = hash.Sum(nil)
-	for sum[len(sum)-1] % 16 != 0 {
+	for sum[len(sum)-1]%16 != 0 {
 		hash.Reset()
 		hash.Write([]byte(strconv.Itoa(nonce)))
 		hash.Write([]byte(strconv.Itoa(next.Index)))
@@ -36,5 +36,11 @@ func GenerateNextFrom(prev Block, data Data) Block {
 	}
 	next.Hash = hash
 	next.Nonce = Nonce(nonce)
-	return next;
+	return next
+}
+
+func GenerateGenesisBlock() Block {
+	var b = Block{}
+	b.Hash = sha256.New()
+	return b
 }
