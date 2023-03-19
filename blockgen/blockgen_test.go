@@ -28,6 +28,18 @@ func TestGenerateNextFrom_PrevHash(t *testing.T) {
 	}
 }
 
+func TestGenerateNextFrom_Data(t *testing.T) {
+	var prev = Block{}
+	prev.Hash = sha256.New()
+	var data Data
+	var text = []byte{11, 14, 14, 15}
+	copy(data[:], text)
+	var next = GenerateNextFrom(prev, data)
+	if next.Data != data {
+		t.Errorf("data = %x; want %x", next.Data, data)
+	}
+}
+
 func TestGenerateNextFrom_Hash(t *testing.T) {
 	var prev = Block{}
 	prev.Hash = sha256.New()

@@ -21,6 +21,7 @@ func GenerateNextFrom(prev Block, data Data) Block {
 	next := Block{}
 	next.Index = prev.Index + 1
 	next.PrevHash = prev.Hash
+	next.Data = data
 	hash := sha256.New()
 	nonce := 0
 	sum := hash.Sum(nil)
