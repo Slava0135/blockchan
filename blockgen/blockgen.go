@@ -17,7 +17,7 @@ type Block struct {
 type Data [256]byte
 type Nonce int
 
-func GenerateNextFrom(prev Block) Block {
+func GenerateNextFrom(prev Block, data Data) Block {
 	next := Block{}
 	next.Index = prev.Index + 1
 	next.PrevHash = prev.Hash
@@ -29,6 +29,7 @@ func GenerateNextFrom(prev Block) Block {
 		hash.Write([]byte(strconv.Itoa(nonce)))
 		hash.Write([]byte(strconv.Itoa(next.Index)))
 		hash.Write(next.PrevHash.Sum(nil))
+		hash.Write(data[:])
 		sum = hash.Sum(nil)
 		nonce += 1
 	}
