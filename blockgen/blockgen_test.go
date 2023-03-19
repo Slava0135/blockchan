@@ -81,3 +81,11 @@ func TestGenerateNextFrom_HashUseData(t *testing.T) {
 		t.Errorf("got same hashes for different data values")
 	}
 }
+
+func TestGenerateGenesisBlock(t *testing.T) {
+	var b = GenerateGenesisBlock()
+	var want = 0
+	if b.Index != want {
+		t.Errorf("index = %d; want %d", b.Index, want)
+	}
+}
