@@ -28,6 +28,7 @@ func GenerateNextFrom(prev Block) Block {
 		hash.Reset()
 		hash.Write([]byte(strconv.Itoa(nonce)))
 		hash.Write([]byte(strconv.Itoa(next.Index)))
+		hash.Write(next.PrevHash.Sum(nil))
 		sum = hash.Sum(nil)
 		nonce += 1
 	}
