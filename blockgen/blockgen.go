@@ -18,5 +18,6 @@ type Nonce [16]byte
 func GenerateNextFrom(prev Block) Block {
 	var next = Block{}
 	next.Index = prev.Index + 1
+	next.PrevHash = prev.Hash
 	return next;
 }
