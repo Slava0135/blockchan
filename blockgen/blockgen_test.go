@@ -1,8 +1,8 @@
 package blockgen
 
 import (
-	"testing"
 	"crypto/sha256"
+	"testing"
 )
 
 func TestGenerateNextFrom_Index(t *testing.T) {
@@ -19,7 +19,9 @@ func TestGenerateNextFrom_PrevHash(t *testing.T) {
 	prev.Hash = sha256.New()
 	prev.Hash.Write([]byte("test"))
 	var next = GenerateNextFrom(prev)
-	if next.PrevHash != prev.Hash {
+	var prevSum = string(next.PrevHash.Sum([]byte{}))
+	var wantSum = string(prev.Hash.Sum([]byte{}))
+	if prevSum != wantSum {
 		t.Errorf("Next block: previous hash is incorrect")
 	}
 }
