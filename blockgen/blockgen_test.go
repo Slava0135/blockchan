@@ -89,3 +89,11 @@ func TestGenerateGenesisBlock(t *testing.T) {
 		t.Errorf("index = %d; want %d", b.Index, want)
 	}
 }
+
+func TestHasValidHash(t *testing.T) {
+	var prev = GenerateGenesisBlock()
+	var next = GenerateNextFrom(prev, Data{42})
+	if !next.HasValidHash() {
+		t.Errorf("generated block hash is not valid")
+	}
+}

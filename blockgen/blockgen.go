@@ -48,3 +48,8 @@ func CalculateHashFrom(b Block) hash.Hash {
 	hash.Write(b.Data[:])
 	return hash
 }
+
+func (b Block) HasValidHash() bool {
+	var hash = CalculateHashFrom(b)
+	return string(b.Hash.Sum(nil)) == string(hash.Sum(nil))
+}
