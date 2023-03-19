@@ -22,25 +22,29 @@ func GenerateNextFrom(prev Block, data Data) Block {
 	next.Index = prev.Index + 1
 	next.PrevHash = prev.Hash
 	next.Data = data
-	var hash = sha256.New()
-	var nonce = 0
-	var sum = hash.Sum(nil)
-	for sum[len(sum)-1]%16 != 0 {
-		hash.Reset()
-		hash.Write([]byte(strconv.Itoa(nonce)))
-		hash.Write([]byte(strconv.Itoa(next.Index)))
-		hash.Write(next.PrevHash.Sum(nil))
-		hash.Write(data[:])
-		sum = hash.Sum(nil)
-		nonce += 1
+	next.Nonce = Nonce(0)
+	for {
+		var hash = CalculateHashFrom(next)
+		var sum = hash.Sum(nil)
+		if sum[len(sum)-1]%16 == 0 {
+			next.Hash = hash
+			return next
+		}
+		next.Nonce += 1
 	}
-	next.Hash = hash
-	next.Nonce = Nonce(nonce)
-	return next
 }
 
 func GenerateGenesisBlock() Block {
 	var b = Block{}
 	b.Hash = sha256.New()
 	return b
+}
+
+func CalculateHashFrom(b Block) hash.Hash {
+	var hash = sha256.New()
+	hash.Write([]byte(strconv.Itoa(int(b.Nonce))))
+	hash.Write([]byte(strconv.Itoa(b.Index)))
+	hash.Write(b.PrevHash.Sum(nil))
+	hash.Write(b.Data[:])
+	return hash
 }
