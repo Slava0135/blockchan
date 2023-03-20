@@ -46,4 +46,34 @@ func TestNodeStart_Genesis(t *testing.T) {
 	}
 }
 
+func TestNodeRun_Shutdown(t *testing.T) {
+	var link = testLink{}
+	var node = NewNode(&link)
+	node.Start()
+	if !node.IsRunning {
+		t.Errorf("node is not running after start")
+	}
+	node.Shutdown()
+	if node.IsRunning {
+		t.Errorf("node is running after shutdown")
+	}
+}
 
+func TestNodeRun_AlreadyRunning(t *testing.T) {
+	var link = testLink{}
+	var node = NewNode(&link)
+	defer func() { _ = recover() }()
+	node.Start()
+	node.Start()
+	t.Errorf("should have panicked because node was already running")
+}
+
+func TestNodeShutdown_AlreadyShutdown(t *testing.T) {
+	var link = testLink{}
+	var node = NewNode(&link)
+	defer func() { _ = recover() }()
+	node.Start()
+	node.Shutdown()
+	node.Shutdown()
+	t.Errorf("should have panicked because node was already shutdown")
+}
