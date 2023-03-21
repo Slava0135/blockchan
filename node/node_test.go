@@ -37,6 +37,13 @@ func newTestLink() testLink {
 	return link
 }
 
+func testData() blockgen.Data {
+	var data blockgen.Data
+	var text = []byte("marko zajc")
+	copy(data[:], text)
+	return data
+}
+
 func TestNodeStart_GetBlocks(t *testing.T) {
 	var link = newTestLink()
 	var node = NewNode(&link)
@@ -121,9 +128,7 @@ func TestNodeRun_SendBlocks(t *testing.T) {
 func TestNodeRun_AcceptReceivedBlock(t *testing.T) {
 	var link = newTestLink()
 	var node = NewNode(&link)
-	var data blockgen.Data
-	var text = []byte("marko zajc")
-	copy(data[:], text)
+	var data = testData()
 	var last = link.existingBlocks[len(link.existingBlocks)-1]
 	var next = blockgen.GenerateNextFrom(last, data)
 	node.Start()
@@ -137,9 +142,7 @@ func TestNodeRun_AcceptReceivedBlock(t *testing.T) {
 func TestNodeRun_RejectReceivedBlock(t *testing.T) {
 	var link = newTestLink()
 	var node = NewNode(&link)
-	var data blockgen.Data
-	var text = []byte("marko zajc")
-	copy(data[:], text)
+	var data = testData()
 	var last = link.existingBlocks[len(link.existingBlocks)-1]
 	var next = blockgen.GenerateNextFrom(last, data)
 	next.Hash.Reset()
@@ -154,9 +157,7 @@ func TestNodeRun_RejectReceivedBlock(t *testing.T) {
 func TestNodeRun_AcceptMissedBlock(t *testing.T) {
 	var link = newTestLink()
 	var node = NewNode(&link)
-	var data blockgen.Data
-	var text = []byte("marko zajc")
-	copy(data[:], text)
+	var data = testData()
 	var last = link.existingBlocks[len(link.existingBlocks)-1]
 	var next = blockgen.GenerateNextFrom(last, data)
 	var nextnext = blockgen.GenerateNextFrom(next, data)
@@ -188,5 +189,18 @@ func TestNodeRun_RejectMissedBlock(t *testing.T) {
 	node.Shutdown()
 	if link.timesAskedForBlocks > 1 {
 		t.Fatalf("node asked for blocks when it got invalid block ahead")
+	}
+}
+
+func TestNodeRun_IgnoreOldBlock(t *testing.T) {
+	var link = newTestLink()
+	var node = NewNode(&link)
+	var data = testData()
+	var old = blockgen.GenerateNextFrom(link.existingBlocks[0], data)
+	node.Start()
+	link.chanToNode <- old
+	node.Shutdown()
+	if node.Blocks[old.Index].Data == data {
+		t.Fatalf("node accepted received old block")
 	}
 }

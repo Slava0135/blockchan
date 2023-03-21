@@ -51,15 +51,14 @@ func (n *Node) Run() {
 				n.Blocks = n.Link.AllExistingBlocks()
 				continue
 			}
+			if len(n.Blocks) > b.Index {
+				continue
+			}
 			var chain []blockgen.Block
-			chain = append(chain, n.Blocks[:b.Index]...)
+			chain = append(chain, n.Blocks...)
 			chain = append(chain, b)
 			if validate.IsValidChain(chain) {
-				if len(n.Blocks) == b.Index {
-					n.Blocks = append(chain, b)
-				} else {
-					n.Blocks[b.Index] = b
-				}
+				n.Blocks = chain
 			}
 		default:
 			var next = blockgen.GenerateNextFrom(n.Blocks[len(n.Blocks)-1], blockgen.Data{})
