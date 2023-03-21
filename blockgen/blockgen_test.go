@@ -40,8 +40,8 @@ func TestGenerateNextFrom_Hash(t *testing.T) {
 	var prev = GenerateGenesisBlock()
 	var next = GenerateNextFrom(prev, Data{})
 	var sum = fmt.Sprintf("%x", next.Hash.Sum(nil))
-	var ending = sum[len(sum)-1:]
-	const want = "0"
+	var ending = sum[len(sum)-4:]
+	const want = "0000"
 	if ending != want {
 		t.Errorf("got hash ending with %s; want %s", ending, want)
 	}
