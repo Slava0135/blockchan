@@ -44,6 +44,9 @@ func (n *Node) Run() {
 		case <-n.shutdown:
 			return
 		case b := <-n.Link.ReceiveChan():
+			if !b.HasValidHash() {
+				continue
+			}
 			if len(n.Blocks) < b.Index {
 				n.Blocks = n.Link.AllExistingBlocks()
 				continue
