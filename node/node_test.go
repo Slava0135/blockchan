@@ -151,7 +151,7 @@ func TestNodeRun_RejectReceivedBlock(t *testing.T) {
 	}
 }
 
-func TestNodeRun_MissedBlock(t *testing.T) {
+func TestNodeRun_AcceptMissedBlock(t *testing.T) {
 	var link = newTestLink()
 	var node = NewNode(&link)
 	var data blockgen.Data
@@ -165,12 +165,31 @@ func TestNodeRun_MissedBlock(t *testing.T) {
 	link.chanToNode <- nextnext
 	node.Shutdown()
 	if link.timesAskedForBlocks < 2 {
-		t.Fatalf("node did not ask for blocks when it missed block")
+		t.Fatalf("node did not ask for blocks when it got block ahead")
 	}
 	if node.Blocks[next.Index].Data != data {
 		t.Fatalf("node did not saved missing block")
 	}
 	if node.Blocks[nextnext.Index].Data != data {
 		t.Fatalf("node did not saved received block")
+	}
+}
+
+func TestNodeRun_RejectMissedBlock(t *testing.T) {
+	var link = newTestLink()
+	var node = NewNode(&link)
+	var data blockgen.Data
+	var text = []byte("marko zajc")
+	copy(data[:], text)
+	var last = link.existingBlocks[len(link.existingBlocks)-1]
+	var next = blockgen.GenerateNextFrom(last, data)
+	var nextnext = blockgen.GenerateNextFrom(next, data)
+	nextnext.Hash.Reset()
+	node.Start()
+	link.existingBlocks = append(link.existingBlocks, next, nextnext)
+	link.chanToNode <- nextnext
+	node.Shutdown()
+	if link.timesAskedForBlocks > 1 {
+		t.Fatalf("node asked for blocks when it got invalid block ahead")
 	}
 }
