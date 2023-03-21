@@ -35,8 +35,17 @@ func TestNodeStart_GetBlocks(t *testing.T) {
 	var link = newTestLink()
 	var node = NewNode(&link)
 	node.Start()
+	node.Shutdown()
 	if !link.wasAskedForBlocks {
-		t.Errorf("node did not ask for blocks")
+		t.Fatalf("node did not ask for blocks")
+	}
+	if len(node.Blocks) < len(link.startBlocks) {
+		t.Fatalf("node blocks amount = %d less than amount of start blocks = %d", len(node.Blocks), len(link.startBlocks))
+	}
+	for i := range link.startBlocks {
+		if node.Blocks[i] != link.startBlocks[i] {
+			t.Fatalf("node block and start block did not match")
+		}
 	}
 }
 
