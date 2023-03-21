@@ -40,6 +40,7 @@ func GenerateNextFrom(prev Block, data Data) Block {
 
 func GenerateGenesisBlock() Block {
 	var b = Block{}
+	b.PrevHash = sha256.New()
 	b.Hash = sha256.New()
 	return b
 }
