@@ -178,12 +178,9 @@ func TestNodeRun_AcceptMissedBlock(t *testing.T) {
 func TestNodeRun_RejectMissedBlock(t *testing.T) {
 	var link = newTestLink()
 	var node = NewNode(&link)
-	var data blockgen.Data
-	var text = []byte("marko zajc")
-	copy(data[:], text)
 	var last = link.existingBlocks[len(link.existingBlocks)-1]
-	var next = blockgen.GenerateNextFrom(last, data)
-	var nextnext = blockgen.GenerateNextFrom(next, data)
+	var next = blockgen.GenerateNextFrom(last, blockgen.Data{})
+	var nextnext = blockgen.GenerateNextFrom(next, blockgen.Data{})
 	nextnext.Hash.Reset()
 	node.Start()
 	link.existingBlocks = append(link.existingBlocks, next, nextnext)
