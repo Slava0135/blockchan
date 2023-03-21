@@ -7,14 +7,14 @@ import (
 )
 
 type testLink struct {
-	startBlocks       []blockgen.Block
-	wasAskedForBlocks bool
-	receivedBlocks    []blockgen.Block
-	chanToNode        chan blockgen.Block
+	startBlocks         []blockgen.Block
+	timesAskedForBlocks int
+	receivedBlocks      []blockgen.Block
+	chanToNode          chan blockgen.Block
 }
 
 func (link *testLink) GetAllBlocks() []blockgen.Block {
-	link.wasAskedForBlocks = true
+	link.timesAskedForBlocks += 1
 	return link.startBlocks
 }
 
@@ -42,7 +42,7 @@ func TestNodeStart_GetBlocks(t *testing.T) {
 	var node = NewNode(&link)
 	node.Start()
 	node.Shutdown()
-	if !link.wasAskedForBlocks {
+	if link.timesAskedForBlocks == 0 {
 		t.Fatalf("node did not ask for blocks")
 	}
 	if len(node.Blocks) < len(link.startBlocks) {
@@ -148,5 +148,29 @@ func TestNodeRun_RejectReceivedBlock(t *testing.T) {
 	node.Shutdown()
 	if len(node.Blocks) >= next.Index && node.Blocks[next.Index].Data == data {
 		t.Errorf("node accepted invalid received block")
+	}
+}
+
+func TestNodeRun_MissedBlock(t *testing.T) {
+	var link = newTestLink()
+	var node = NewNode(&link)
+	var data blockgen.Data
+	var text = []byte("marko zajc")
+	copy(data[:], text)
+	var last = link.startBlocks[len(link.startBlocks)-1]
+	var next = blockgen.GenerateNextFrom(last, data)
+	var nextnext = blockgen.GenerateNextFrom(next, data)
+	node.Start()
+	link.startBlocks = append(link.startBlocks, next, nextnext)
+	link.chanToNode <- nextnext
+	node.Shutdown()
+	if link.timesAskedForBlocks < 2 {
+		t.Fatalf("node did not ask for blocks when it missed block")
+	}
+	if node.Blocks[next.Index].Data != data {
+		t.Fatalf("node did not saved missing block")
+	}
+	if node.Blocks[nextnext.Index].Data != data {
+		t.Fatalf("node did not saved received block")
 	}
 }

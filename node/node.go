@@ -44,14 +44,18 @@ func (n *Node) Run() {
 		case <-n.shutdown:
 			return
 		case b := <-n.Link.GetReceiveChan():
-			var chain []blockgen.Block
-			chain = append(chain, n.Blocks[:b.Index]...)
-			chain = append(chain, b)
-			if validate.IsValidChain(chain) {
-				if len(n.Blocks) <= b.Index {
-					n.Blocks = append(chain, b)
-				} else {
-					n.Blocks[b.Index] = b
+			if len(n.Blocks) < b.Index {
+				n.Blocks = n.Link.GetAllBlocks()
+			} else {
+				var chain []blockgen.Block
+				chain = append(chain, n.Blocks[:b.Index]...)
+				chain = append(chain, b)
+				if validate.IsValidChain(chain) {
+					if len(n.Blocks) == b.Index {
+						n.Blocks = append(chain, b)
+					} else {
+						n.Blocks[b.Index] = b
+					}
 				}
 			}
 		default:
