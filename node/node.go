@@ -46,16 +46,16 @@ func (n *Node) Run() {
 		case b := <-n.Link.ReceiveChan():
 			if len(n.Blocks) < b.Index {
 				n.Blocks = n.Link.AllExistingBlocks()
-			} else {
-				var chain []blockgen.Block
-				chain = append(chain, n.Blocks[:b.Index]...)
-				chain = append(chain, b)
-				if validate.IsValidChain(chain) {
-					if len(n.Blocks) == b.Index {
-						n.Blocks = append(chain, b)
-					} else {
-						n.Blocks[b.Index] = b
-					}
+				continue
+			}
+			var chain []blockgen.Block
+			chain = append(chain, n.Blocks[:b.Index]...)
+			chain = append(chain, b)
+			if validate.IsValidChain(chain) {
+				if len(n.Blocks) == b.Index {
+					n.Blocks = append(chain, b)
+				} else {
+					n.Blocks[b.Index] = b
 				}
 			}
 		default:
