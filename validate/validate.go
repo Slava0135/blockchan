@@ -6,7 +6,7 @@ import (
 
 func IsValidChain(chain []blockgen.Block) bool {
 	for i, b := range chain {
-		if string(blockgen.CalculateHashFrom(b).Sum(nil)) != string(b.Hash.Sum(nil)) {
+		if !b.HasValidHash() {
 			return false
 		}
 		if i > 0 {
