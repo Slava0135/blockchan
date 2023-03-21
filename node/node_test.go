@@ -70,7 +70,7 @@ func TestNodeStart_Genesis(t *testing.T) {
 		t.Fatalf("node did not generate genesis block")
 	}
 	if node.Blocks[0].Index != 0 {
-		t.Errorf("genesis block index is wrong")
+		t.Fatalf("genesis block index is wrong")
 	}
 }
 
@@ -79,11 +79,11 @@ func TestNodeRun_Shutdown(t *testing.T) {
 	var node = NewNode(&link)
 	node.Start()
 	if !node.IsRunning {
-		t.Errorf("node is not running after start")
+		t.Fatalf("node is not running after start")
 	}
 	node.Shutdown()
 	if node.IsRunning {
-		t.Errorf("node is running after shutdown")
+		t.Fatalf("node is running after shutdown")
 	}
 }
 
@@ -93,7 +93,7 @@ func TestNodeRun_AlreadyRunning(t *testing.T) {
 	defer func() { _ = recover() }()
 	node.Start()
 	node.Start()
-	t.Errorf("should have panicked because node was already running")
+	t.Fatalf("should have panicked because node was already running")
 }
 
 func TestNodeShutdown_AlreadyShutdown(t *testing.T) {
@@ -103,7 +103,7 @@ func TestNodeShutdown_AlreadyShutdown(t *testing.T) {
 	node.Start()
 	node.Shutdown()
 	node.Shutdown()
-	t.Errorf("should have panicked because node was already shutdown")
+	t.Fatalf("should have panicked because node was already shutdown")
 }
 
 func TestNodeRun_SendBlocks(t *testing.T) {
@@ -135,7 +135,7 @@ func TestNodeRun_AcceptReceivedBlock(t *testing.T) {
 	link.chanToNode <- next
 	node.Shutdown()
 	if node.Blocks[next.Index].Data != data {
-		t.Errorf("node did not accept valid received block")
+		t.Fatalf("node did not accept valid received block")
 	}
 }
 
@@ -150,7 +150,7 @@ func TestNodeRun_RejectReceivedBlock(t *testing.T) {
 	link.chanToNode <- next
 	node.Shutdown()
 	if len(node.Blocks) >= next.Index && node.Blocks[next.Index].Data == data {
-		t.Errorf("node accepted invalid received block")
+		t.Fatalf("node accepted invalid received block")
 	}
 }
 

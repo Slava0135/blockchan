@@ -10,7 +10,7 @@ func TestGenerateNextFrom_Index(t *testing.T) {
 	var next = GenerateNextFrom(prev, Data{})
 	var wantIndex = prev.Index + 1
 	if next.Index != wantIndex {
-		t.Errorf("index = %d; want %d", next.Index, wantIndex)
+		t.Fatalf("index = %d; want %d", next.Index, wantIndex)
 	}
 }
 
@@ -21,7 +21,7 @@ func TestGenerateNextFrom_PrevHash(t *testing.T) {
 	var prevSum = string(next.PrevHash.Sum(nil))
 	var wantSum = string(prev.Hash.Sum(nil))
 	if prevSum != wantSum {
-		t.Errorf("previous hash is incorrect")
+		t.Fatalf("previous hash is incorrect")
 	}
 }
 
@@ -32,7 +32,7 @@ func TestGenerateNextFrom_Data(t *testing.T) {
 	copy(data[:], text)
 	var next = GenerateNextFrom(prev, data)
 	if next.Data != data {
-		t.Errorf("data = %x; want %x", next.Data, data)
+		t.Fatalf("data = %x; want %x", next.Data, data)
 	}
 }
 
@@ -43,7 +43,7 @@ func TestGenerateNextFrom_Hash(t *testing.T) {
 	var ending = sum[len(sum)-4:]
 	const want = "0000"
 	if ending != want {
-		t.Errorf("got hash ending with %s; want %s", ending, want)
+		t.Fatalf("got hash ending with %s; want %s", ending, want)
 	}
 }
 
@@ -55,7 +55,7 @@ func TestGenerateNextFrom_HashUseIndex(t *testing.T) {
 	var nextTwo = GenerateNextFrom(prev, Data{})
 	var sumTwo = string(nextTwo.Hash.Sum(nil))
 	if sumOne == sumTwo {
-		t.Errorf("got same hashes for different index values")
+		t.Fatalf("got same hashes for different index values")
 	}
 }
 
@@ -67,7 +67,7 @@ func TestGenerateNextFrom_HashUsePrevHash(t *testing.T) {
 	var nextTwo = GenerateNextFrom(prev, Data{})
 	var sumTwo = string(nextTwo.Hash.Sum(nil))
 	if sumOne == sumTwo {
-		t.Errorf("got same hashes for different prev hashes values")
+		t.Fatalf("got same hashes for different prev hashes values")
 	}
 }
 
@@ -78,7 +78,7 @@ func TestGenerateNextFrom_HashUseData(t *testing.T) {
 	var nextTwo = GenerateNextFrom(prev, Data{2})
 	var sumTwo = string(nextTwo.Hash.Sum(nil))
 	if sumOne == sumTwo {
-		t.Errorf("got same hashes for different data values")
+		t.Fatalf("got same hashes for different data values")
 	}
 }
 
@@ -86,7 +86,7 @@ func TestGenerateGenesisBlock(t *testing.T) {
 	var b = GenerateGenesisBlock()
 	var want = 0
 	if b.Index != want {
-		t.Errorf("index = %d; want %d", b.Index, want)
+		t.Fatalf("index = %d; want %d", b.Index, want)
 	}
 }
 
@@ -94,6 +94,6 @@ func TestHasValidHash(t *testing.T) {
 	var prev = GenerateGenesisBlock()
 	var next = GenerateNextFrom(prev, Data{42})
 	if !next.HasValidHash() {
-		t.Errorf("generated block hash is not valid")
+		t.Fatalf("generated block hash is not valid")
 	}
 }

@@ -7,7 +7,7 @@ import (
 
 func TestIsValidChain_Empty(t *testing.T) {
 	if !IsValidChain(nil) {
-		t.Errorf("empty chain is not valid")
+		t.Fatalf("empty chain is not valid")
 	}
 }
 
@@ -15,7 +15,7 @@ func TestIsValidChain_InvalidHash(t *testing.T) {
 	var one = blockgen.GenerateGenesisBlock()
 	one.Nonce += 1
 	if IsValidChain([]blockgen.Block{one}) {
-		t.Errorf("block with different hash is valid")
+		t.Fatalf("block with different hash is valid")
 	}
 }
 
@@ -26,7 +26,7 @@ func TestIsValidChain_ValidChain(t *testing.T) {
 		chain = append(chain, blockgen.GenerateNextFrom(chain[i], blockgen.Data{}))
 	}
 	if !IsValidChain(chain) {
-		t.Errorf("valid chain is invalid")
+		t.Fatalf("valid chain is invalid")
 	}
 }
 
@@ -36,7 +36,7 @@ func TestIsValidChain_PrevHashNotMatching(t *testing.T) {
 	one.Data[0] += 1
 	one.GenerateValidHash()
 	if IsValidChain([]blockgen.Block{one, two}) {
-		t.Errorf("block with invalid prev hash is valid")
+		t.Fatalf("block with invalid prev hash is valid")
 	}
 }
 
@@ -52,6 +52,6 @@ func TestIsValidChain_WrongIndex(t *testing.T) {
 		}
 	}
 	if IsValidChain(chain) {
-		t.Errorf("block with invalid index is valid")
+		t.Fatalf("block with invalid index is valid")
 	}
 }
