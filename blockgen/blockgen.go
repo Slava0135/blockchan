@@ -55,5 +55,5 @@ func CalculateHashFrom(b Block) hash.Hash {
 
 func hasValidEnding(h hash.Hash) bool {
 	var sum = h.Sum(nil)
-	return sum[len(sum)-1]%16 == 0
+	return sum[len(sum)-1] == 0 && sum[len(sum)-2] == 0
 }
