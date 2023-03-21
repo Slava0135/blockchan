@@ -14,6 +14,7 @@ type Node struct {
 type Link interface {
 	GetAllBlocks() []blockgen.Block
 	SendBlock(blockgen.Block)
+	GetReceiveChan() chan blockgen.Block
 }
 
 func NewNode(link Link) Node {
@@ -41,6 +42,8 @@ func (n *Node) Run() {
 		select {
 		case <-n.shutdown:
 			return
+		case b := <-n.Link.GetReceiveChan():
+			n.Blocks[b.Index] = b
 		default:
 			var next = blockgen.GenerateNextFrom(n.Blocks[len(n.Blocks)-1], blockgen.Data{})
 			n.Blocks = append(n.Blocks, next)

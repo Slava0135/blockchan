@@ -10,6 +10,7 @@ type testLink struct {
 	startBlocks       []blockgen.Block
 	wasAskedForBlocks bool
 	receivedBlocks    []blockgen.Block
+	chanToNode        chan blockgen.Block
 }
 
 func (link *testLink) GetAllBlocks() []blockgen.Block {
@@ -21,6 +22,10 @@ func (link *testLink) SendBlock(b blockgen.Block) {
 	link.receivedBlocks = append(link.receivedBlocks, b)
 }
 
+func (link *testLink) GetReceiveChan() chan blockgen.Block {
+	return link.chanToNode
+}
+
 func newTestLink() testLink {
 	var link = testLink{}
 	link.startBlocks = append(link.startBlocks, blockgen.GenerateGenesisBlock())
@@ -28,6 +33,7 @@ func newTestLink() testLink {
 		var newBlock = blockgen.GenerateNextFrom(link.startBlocks[i], blockgen.Data{i})
 		link.startBlocks = append(link.startBlocks, newBlock)
 	}
+	link.chanToNode = make(chan blockgen.Block)
 	return link
 }
 
@@ -109,5 +115,22 @@ func TestNodeRun_SendBlocks(t *testing.T) {
 		if node.Blocks[i] != v {
 			t.Fatalf("node did not send correct block")
 		}
+	}
+}
+
+func TestNodeRun_AcceptReceivedBlock(t *testing.T) {
+	var link = newTestLink()
+	var node = NewNode(&link)
+	var data blockgen.Data
+	var text = []byte("marko zajc")
+	copy(data[:], text)
+	var last = link.startBlocks[len(link.startBlocks)-1]
+	var next = blockgen.GenerateNextFrom(last, data)
+	node.Start()
+	time.Sleep(time.Millisecond)
+	link.chanToNode <- next
+	time.Sleep(time.Millisecond)
+	if node.Blocks[next.Index].Data != data {
+		t.Errorf("node did not accept valid received block")
 	}
 }
