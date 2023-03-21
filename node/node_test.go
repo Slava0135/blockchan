@@ -7,31 +7,31 @@ import (
 )
 
 type testLink struct {
-	startBlocks         []blockgen.Block
+	existingBlocks      []blockgen.Block
 	timesAskedForBlocks int
 	receivedBlocks      []blockgen.Block
 	chanToNode          chan blockgen.Block
 }
 
-func (link *testLink) GetAllBlocks() []blockgen.Block {
+func (link *testLink) AllExistingBlocks() []blockgen.Block {
 	link.timesAskedForBlocks += 1
-	return link.startBlocks
+	return link.existingBlocks
 }
 
 func (link *testLink) SendBlock(b blockgen.Block) {
 	link.receivedBlocks = append(link.receivedBlocks, b)
 }
 
-func (link *testLink) GetReceiveChan() chan blockgen.Block {
+func (link *testLink) ReceiveChan() chan blockgen.Block {
 	return link.chanToNode
 }
 
 func newTestLink() testLink {
 	var link = testLink{}
-	link.startBlocks = append(link.startBlocks, blockgen.GenerateGenesisBlock())
+	link.existingBlocks = append(link.existingBlocks, blockgen.GenerateGenesisBlock())
 	for i := byte(0); i < 10; i += 1 {
-		var newBlock = blockgen.GenerateNextFrom(link.startBlocks[i], blockgen.Data{i})
-		link.startBlocks = append(link.startBlocks, newBlock)
+		var newBlock = blockgen.GenerateNextFrom(link.existingBlocks[i], blockgen.Data{i})
+		link.existingBlocks = append(link.existingBlocks, newBlock)
 	}
 	link.chanToNode = make(chan blockgen.Block)
 	return link
@@ -45,11 +45,11 @@ func TestNodeStart_GetBlocks(t *testing.T) {
 	if link.timesAskedForBlocks == 0 {
 		t.Fatalf("node did not ask for blocks")
 	}
-	if len(node.Blocks) < len(link.startBlocks) {
-		t.Fatalf("node blocks amount = %d less than amount of start blocks = %d", len(node.Blocks), len(link.startBlocks))
+	if len(node.Blocks) < len(link.existingBlocks) {
+		t.Fatalf("node blocks amount = %d less than amount of start blocks = %d", len(node.Blocks), len(link.existingBlocks))
 	}
-	for i := range link.startBlocks {
-		if node.Blocks[i] != link.startBlocks[i] {
+	for i := range link.existingBlocks {
+		if node.Blocks[i] != link.existingBlocks[i] {
 			t.Fatalf("node block and start block did not match")
 		}
 	}
@@ -124,7 +124,7 @@ func TestNodeRun_AcceptReceivedBlock(t *testing.T) {
 	var data blockgen.Data
 	var text = []byte("marko zajc")
 	copy(data[:], text)
-	var last = link.startBlocks[len(link.startBlocks)-1]
+	var last = link.existingBlocks[len(link.existingBlocks)-1]
 	var next = blockgen.GenerateNextFrom(last, data)
 	node.Start()
 	link.chanToNode <- next
@@ -140,7 +140,7 @@ func TestNodeRun_RejectReceivedBlock(t *testing.T) {
 	var data blockgen.Data
 	var text = []byte("marko zajc")
 	copy(data[:], text)
-	var last = link.startBlocks[len(link.startBlocks)-1]
+	var last = link.existingBlocks[len(link.existingBlocks)-1]
 	var next = blockgen.GenerateNextFrom(last, data)
 	next.Hash.Reset()
 	node.Start()
@@ -157,11 +157,11 @@ func TestNodeRun_MissedBlock(t *testing.T) {
 	var data blockgen.Data
 	var text = []byte("marko zajc")
 	copy(data[:], text)
-	var last = link.startBlocks[len(link.startBlocks)-1]
+	var last = link.existingBlocks[len(link.existingBlocks)-1]
 	var next = blockgen.GenerateNextFrom(last, data)
 	var nextnext = blockgen.GenerateNextFrom(next, data)
 	node.Start()
-	link.startBlocks = append(link.startBlocks, next, nextnext)
+	link.existingBlocks = append(link.existingBlocks, next, nextnext)
 	link.chanToNode <- nextnext
 	node.Shutdown()
 	if link.timesAskedForBlocks < 2 {
