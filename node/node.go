@@ -2,6 +2,7 @@ package node
 
 import (
 	"slava0135/blockchan/blockgen"
+	"slava0135/blockchan/validate"
 )
 
 type Node struct {
@@ -12,9 +13,9 @@ type Node struct {
 }
 
 type Link interface {
-	GetAllBlocks() []blockgen.Block
+	AllExistingBlocks() []blockgen.Block
 	SendBlock(blockgen.Block)
-	GetReceiveChan() chan blockgen.Block
+	ReceiveChan() chan blockgen.Block
 }
 
 func NewNode(link Link) Node {
@@ -28,7 +29,7 @@ func (n *Node) Start() {
 	if n.IsRunning {
 		panic("node was already running!")
 	}
-	n.Blocks = n.Link.GetAllBlocks()
+	n.Blocks = n.Link.AllExistingBlocks()
 	if len(n.Blocks) == 0 {
 		n.Blocks = append(n.Blocks, blockgen.GenerateGenesisBlock())
 		n.Link.SendBlock(n.Blocks[0])
@@ -42,8 +43,23 @@ func (n *Node) Run() {
 		select {
 		case <-n.shutdown:
 			return
-		case b := <-n.Link.GetReceiveChan():
-			n.Blocks[b.Index] = b
+		case b := <-n.Link.ReceiveChan():
+			if !b.HasValidHash() {
+				continue
+			}
+			if len(n.Blocks) < b.Index {
+				n.Blocks = n.Link.AllExistingBlocks()
+				continue
+			}
+			if len(n.Blocks) > b.Index {
+				continue
+			}
+			var chain []blockgen.Block
+			chain = append(chain, n.Blocks...)
+			chain = append(chain, b)
+			if validate.IsValidChain(chain) {
+				n.Blocks = chain
+			}
 		default:
 			var next = blockgen.GenerateNextFrom(n.Blocks[len(n.Blocks)-1], blockgen.Data{})
 			n.Blocks = append(n.Blocks, next)
