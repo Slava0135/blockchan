@@ -18,7 +18,7 @@ type Data [256]byte
 type Nonce int
 
 func (b Block) HasValidHash() bool {
-	var hash = CalculateHashFrom(b)
+	var hash = calculateHashFrom(b)
 	return string(b.Hash.Sum(nil)) == string(hash.Sum(nil)) && hasValidEnding(hash)
 }
 
@@ -28,20 +28,20 @@ func GenerateNextFrom(prev Block, data Data) Block {
 	next.PrevHash = prev.Hash
 	next.Data = data
 	next.Nonce = Nonce(0)
-	next.generateValidHash()
+	next.GenerateValidHash()
 	return next
 }
 
 func GenerateGenesisBlock() Block {
 	var b = Block{}
 	b.PrevHash = sha256.New()
-	b.generateValidHash()
+	b.GenerateValidHash()
 	return b
 }
 
-func (b *Block) generateValidHash() {
+func (b *Block) GenerateValidHash() {
 	for {
-		var hash = CalculateHashFrom(*b)
+		var hash = calculateHashFrom(*b)
 		if hasValidEnding(hash) {
 			b.Hash = hash
 			return
@@ -50,7 +50,7 @@ func (b *Block) generateValidHash() {
 	}
 }
 
-func CalculateHashFrom(b Block) hash.Hash {
+func calculateHashFrom(b Block) hash.Hash {
 	var hash = sha256.New()
 	hash.Write([]byte(strconv.Itoa(int(b.Nonce))))
 	hash.Write([]byte(strconv.Itoa(b.Index)))
