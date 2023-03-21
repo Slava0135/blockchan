@@ -127,9 +127,8 @@ func TestNodeRun_AcceptReceivedBlock(t *testing.T) {
 	var last = link.startBlocks[len(link.startBlocks)-1]
 	var next = blockgen.GenerateNextFrom(last, data)
 	node.Start()
-	time.Sleep(time.Millisecond)
 	link.chanToNode <- next
-	time.Sleep(time.Millisecond)
+	node.Shutdown()
 	if node.Blocks[next.Index].Data != data {
 		t.Errorf("node did not accept valid received block")
 	}
@@ -145,10 +144,9 @@ func TestNodeRun_RejectReceivedBlock(t *testing.T) {
 	var next = blockgen.GenerateNextFrom(last, data)
 	next.Hash.Reset()
 	node.Start()
-	time.Sleep(time.Millisecond)
 	link.chanToNode <- next
-	time.Sleep(time.Millisecond)
-	if node.Blocks[next.Index].Data == data {
+	node.Shutdown()
+	if len(node.Blocks) >= next.Index && node.Blocks[next.Index].Data == data {
 		t.Errorf("node accepted invalid received block")
 	}
 }

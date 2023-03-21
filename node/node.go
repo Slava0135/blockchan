@@ -48,7 +48,11 @@ func (n *Node) Run() {
 			chain = append(chain, n.Blocks[:b.Index]...)
 			chain = append(chain, b)
 			if validate.IsValidChain(chain) {
-				n.Blocks[b.Index] = b
+				if len(n.Blocks) <= b.Index {
+					n.Blocks = append(chain, b)
+				} else {
+					n.Blocks[b.Index] = b
+				}
 			}
 		default:
 			var next = blockgen.GenerateNextFrom(n.Blocks[len(n.Blocks)-1], blockgen.Data{})
