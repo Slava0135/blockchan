@@ -2,6 +2,7 @@ package node
 
 import (
 	"slava0135/blockchan/blockgen"
+	"slava0135/blockchan/validate"
 )
 
 type Node struct {
@@ -43,7 +44,12 @@ func (n *Node) Run() {
 		case <-n.shutdown:
 			return
 		case b := <-n.Link.GetReceiveChan():
-			n.Blocks[b.Index] = b
+			var chain []blockgen.Block
+			chain = append(chain, n.Blocks[:b.Index]...)
+			chain = append(chain, b)
+			if validate.IsValidChain(chain) {
+				n.Blocks[b.Index] = b
+			}
 		default:
 			var next = blockgen.GenerateNextFrom(n.Blocks[len(n.Blocks)-1], blockgen.Data{})
 			n.Blocks = append(n.Blocks, next)
