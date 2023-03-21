@@ -29,3 +29,13 @@ func TestIsChainValid_ValidChain(t *testing.T) {
 		t.Errorf("valid chain is invalid")
 	}
 }
+
+func TestIsChainValid_PrevHashNotMatching(t *testing.T) {
+	var one = blockgen.GenerateGenesisBlock()
+	var two = blockgen.GenerateNextFrom(one, blockgen.Data{})
+	one.Data[0] += 1
+	one.Hash = blockgen.CalculateHashFrom(one)
+	if IsChainValid([]blockgen.Block{one, two}) {
+		t.Errorf("block with invalid prev hash is valid")
+	}
+}
