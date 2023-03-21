@@ -13,6 +13,7 @@ type Node struct {
 
 type Link interface {
 	GetAllBlocks() []blockgen.Block
+	SendBlock(blockgen.Block)
 }
 
 func NewNode(link Link) Node {
@@ -23,12 +24,13 @@ func NewNode(link Link) Node {
 }
 
 func (n *Node) Start() {
-	if (n.IsRunning) {
+	if n.IsRunning {
 		panic("node was already running!")
 	}
 	n.Blocks = n.Link.GetAllBlocks()
 	if len(n.Blocks) == 0 {
 		n.Blocks = append(n.Blocks, blockgen.GenerateGenesisBlock())
+		n.Link.SendBlock(n.Blocks[0])
 	}
 	n.IsRunning = true
 	go n.Run()
@@ -39,12 +41,16 @@ func (n *Node) Run() {
 		select {
 		case <-n.shutdown:
 			return
+		default:
+			var next = blockgen.GenerateNextFrom(n.Blocks[len(n.Blocks)-1], blockgen.Data{})
+			n.Blocks = append(n.Blocks, next)
+			n.Link.SendBlock(next)
 		}
 	}
 }
 
 func (n *Node) Shutdown() {
-	if (!n.IsRunning) {
+	if !n.IsRunning {
 		panic("node was not running!")
 	}
 	n.shutdown <- struct{}{}

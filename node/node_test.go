@@ -3,16 +3,22 @@ package node
 import (
 	"slava0135/blockchan/blockgen"
 	"testing"
+	"time"
 )
 
 type testLink struct {
-	startBlocks []blockgen.Block
+	startBlocks       []blockgen.Block
 	wasAskedForBlocks bool
+	receivedBlocks    []blockgen.Block
 }
 
 func (link *testLink) GetAllBlocks() []blockgen.Block {
 	link.wasAskedForBlocks = true
 	return link.startBlocks
+}
+
+func (link *testLink) SendBlock(b blockgen.Block) {
+	link.receivedBlocks = append(link.receivedBlocks, b)
 }
 
 func newTestLink() testLink {
@@ -76,4 +82,23 @@ func TestNodeShutdown_AlreadyShutdown(t *testing.T) {
 	node.Shutdown()
 	node.Shutdown()
 	t.Errorf("should have panicked because node was already shutdown")
+}
+
+func TestNodeRun_SendBlocks(t *testing.T) {
+	var link = testLink{}
+	var node = NewNode(&link)
+	node.Start()
+	time.Sleep(time.Second)
+	node.Shutdown()
+	if len(node.Blocks) != len(link.receivedBlocks) {
+		t.Fatalf("node blocks amount = %d not equals amount of sent blocks = %d", len(node.Blocks), len(link.receivedBlocks))
+	}
+	if len(node.Blocks) == 1 {
+		t.Fatalf("node did not generate any blocks except genesis")
+	}
+	for i, v := range link.receivedBlocks {
+		if node.Blocks[i] != v {
+			t.Fatalf("node did not send correct block")
+		}
+	}
 }
