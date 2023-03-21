@@ -28,21 +28,26 @@ func GenerateNextFrom(prev Block, data Data) Block {
 	next.PrevHash = prev.Hash
 	next.Data = data
 	next.Nonce = Nonce(0)
-	for {
-		var hash = CalculateHashFrom(next)
-		if hasValidEnding(hash) {
-			next.Hash = hash
-			return next
-		}
-		next.Nonce += 1
-	}
+	next.generateValidHash()
+	return next
 }
 
 func GenerateGenesisBlock() Block {
 	var b = Block{}
 	b.PrevHash = sha256.New()
-	b.Hash = CalculateHashFrom(b)
+	b.generateValidHash()
 	return b
+}
+
+func (b *Block) generateValidHash() {
+	for {
+		var hash = CalculateHashFrom(*b)
+		if hasValidEnding(hash) {
+			b.Hash = hash
+			return
+		}
+		b.Nonce += 1
+	}
 }
 
 func CalculateHashFrom(b Block) hash.Hash {
