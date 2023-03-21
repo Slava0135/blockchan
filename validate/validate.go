@@ -10,6 +10,9 @@ func IsChainValid(chain []blockgen.Block) bool {
 			return false
 		}
 		if i > 0 {
+			if chain[i].Index != chain[i-1].Index + 1 {
+				return false
+			}
 			if chain[i].PrevHash != chain[i-1].Hash {
 				return false
 			}

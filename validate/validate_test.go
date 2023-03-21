@@ -39,3 +39,19 @@ func TestIsChainValid_PrevHashNotMatching(t *testing.T) {
 		t.Errorf("block with invalid prev hash is valid")
 	}
 }
+
+func TestIsChainValid_WrongIndex(t *testing.T) {
+	var gen = blockgen.GenerateGenesisBlock()
+	var chain = []blockgen.Block{gen}
+	for i := byte(0); i < 10; i += 1 {
+		chain = append(chain, blockgen.GenerateNextFrom(chain[i], blockgen.Data{}))
+		const mut = 3
+		if i == mut-1 {
+			chain[mut].Index += 42
+			chain[mut].Hash = blockgen.CalculateHashFrom(chain[mut])
+		}
+	}
+	if IsChainValid(chain) {
+		t.Errorf("block with invalid index is valid")
+	}
+}
