@@ -18,3 +18,14 @@ func TestIsChainValid_InvalidHash(t *testing.T) {
 		t.Errorf("block with different hash is valid")
 	}
 }
+
+func TestIsChainValid_ValidChain(t *testing.T) {
+	var gen = blockgen.GenerateGenesisBlock()
+	var chain = []blockgen.Block{gen}
+	for i := byte(0); i < 10; i += 1 {
+		chain = append(chain, blockgen.GenerateNextFrom(chain[i], blockgen.Data{}))
+	}
+	if !IsChainValid(chain) {
+		t.Errorf("valid chain is invalid")
+	}
+}
