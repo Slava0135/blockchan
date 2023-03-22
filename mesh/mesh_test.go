@@ -14,7 +14,9 @@ func TestNodeMesh_Interface(t *testing.T) {
 func TestNodeMesh_SendAndReceive(t *testing.T) {
 	var mesh = NewNodeMesh()
 	var nodeFrom = node.NewNode(mesh)
+	mesh.Connect(nodeFrom)
 	var nodeTo = node.NewNode(mesh)
+	mesh.Connect(nodeTo)
 	var sent = blockgen.GenerateGenesisBlock()
 	go mesh.SendBlock(nodeFrom, sent)
 	var received = <-mesh.ReceiveChan(nodeTo)
@@ -26,6 +28,7 @@ func TestNodeMesh_SendAndReceive(t *testing.T) {
 func TestNodeMeshSendBlock_Loopback(t *testing.T) {
 	var mesh = NewNodeMesh()
 	var node = node.NewNode(mesh)
+	mesh.Connect(node)
 	var block = blockgen.GenerateGenesisBlock()
 	go mesh.SendBlock(node, block)
 	select {
@@ -38,8 +41,11 @@ func TestNodeMeshSendBlock_Loopback(t *testing.T) {
 func TestNodeMesh_ThreeNodes(t *testing.T) {
 	var mesh = NewNodeMesh()
 	var nodeFrom = node.NewNode(mesh)
+	mesh.Connect(nodeFrom)
 	var nodeTo1 = node.NewNode(mesh)
+	mesh.Connect(nodeTo1)
 	var nodeTo2 = node.NewNode(mesh)
+	mesh.Connect(nodeTo2)
 	var block = blockgen.GenerateGenesisBlock()
 	go mesh.SendBlock(nodeFrom, block)
 	var received = <-mesh.ReceiveChan(nodeTo1)

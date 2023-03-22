@@ -11,6 +11,7 @@ type testMesh struct {
 	timesAskedForBlocks int
 	receivedBlocks      []blockgen.Block
 	chanToNode          chan blockgen.Block
+	connected           bool
 }
 
 func (mesh *testMesh) AllExistingBlocks() []blockgen.Block {
@@ -27,6 +28,11 @@ func (mesh *testMesh) ReceiveChan(n *Node) chan blockgen.Block {
 }
 
 func (mesh *testMesh) Connect(n *Node) {
+	mesh.connected = true
+}
+
+func (mesh *testMesh) Disconnect(n *Node) {
+	mesh.connected = false
 }
 
 func newTestmesh() testMesh {
@@ -207,5 +213,18 @@ func TestNodeRun_IgnoreOldBlock(t *testing.T) {
 	node.Shutdown()
 	if node.Blocks[old.Index].Data == data {
 		t.Fatalf("node accepted received old block")
+	}
+}
+
+func TestNodeRun_Connection(t *testing.T) {
+	var mesh = newTestmesh()
+	var node = NewNode(&mesh)
+	node.Start()
+	if !mesh.connected {
+		t.Fatalf("node did not connect to mesh when started")
+	}
+	node.Shutdown()
+	if mesh.connected {
+		t.Fatalf("node did not disconnect from mesh when shutdown")
 	}
 }

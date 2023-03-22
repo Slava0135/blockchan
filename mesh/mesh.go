@@ -37,6 +37,11 @@ func (m *NodeMesh) Connect(n *node.Node) {
 	m.receiveChannels[n] = make(chan blockgen.Block)
 }
 
+func (m *NodeMesh) Disconnect(n *node.Node) {
+	close(m.receiveChannels[n])
+	m.receiveChannels[n] = nil
+}
+
 func NewNodeMesh() *NodeMesh {
 	var mesh = &NodeMesh{}
 	mesh.receiveChannels = make(map[*node.Node]chan blockgen.Block)

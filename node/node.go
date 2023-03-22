@@ -17,13 +17,13 @@ type Mesh interface {
 	SendBlock(from *Node, b blockgen.Block)
 	ReceiveChan(*Node) chan blockgen.Block
 	Connect(*Node)
+	Disconnect(*Node)
 }
 
 func NewNode(mesh Mesh) *Node {
 	var node = &Node{}
 	node.Mesh = mesh
 	node.shutdown = make(chan struct{})
-	mesh.Connect(node)
 	return node
 }
 
@@ -37,6 +37,7 @@ func (n *Node) Start() {
 		n.Mesh.SendBlock(n, n.Blocks[0])
 	}
 	n.IsRunning = true
+	n.Mesh.Connect(n)
 	go n.run()
 }
 
@@ -90,6 +91,7 @@ func (n *Node) Shutdown() {
 	if !n.IsRunning {
 		panic("node was not running!")
 	}
+	n.Mesh.Disconnect(n)
 	n.shutdown <- struct{}{}
 	n.IsRunning = false
 }
