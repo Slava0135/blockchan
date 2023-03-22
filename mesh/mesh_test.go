@@ -10,8 +10,8 @@ type testFork struct {
 	blocks []blockgen.Block
 }
 
-func (f *testFork) Blocks() []blockgen.Block {
-	return f.blocks
+func (f *testFork) Blocks(from int) []blockgen.Block {
+	return f.blocks[from:]
 }
 
 func newTestFork(mesh node.Mesh) *testFork {
@@ -89,13 +89,13 @@ func TestForkMeshAllExistingBlocks_ThreeForks(t *testing.T) {
 	}
 	fork1.blocks = chain[0:2]
 	var got = len(mesh.AllExistingBlocks(0))
-	var want = len(fork1.Blocks())
+	var want = len(fork1.Blocks(0))
 	if got != want {
 		t.Fatalf("got %d blocks; want %d blocks", got, want)
 	}
 	fork2.blocks = chain[0:4]
 	got = len(mesh.AllExistingBlocks(0))
-	want = len(fork2.Blocks())
+	want = len(fork2.Blocks(0))
 	if got != want {
 		t.Fatalf("got %d blocks; want %d blocks", got, want)
 	}

@@ -13,11 +13,12 @@ type ForkMesh struct {
 func (m *ForkMesh) AllExistingBlocks(from int) []blockgen.Block {
 	var longest []blockgen.Block
 	for fork := range m.receiveChannels {
-		if !validate.IsValidChain(fork.Blocks()) {
+		var chain = fork.Blocks(0)
+		if !validate.IsValidChain(chain) {
 			continue
 		}
-		if len(fork.Blocks()) > len(longest) {
-			longest = fork.Blocks()
+		if len(chain) > len(longest) {
+			longest = chain
 		}
 	}
 	return longest

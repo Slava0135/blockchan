@@ -22,11 +22,11 @@ type Mesh interface {
 }
 
 type Fork interface {
-	Blocks() []blockgen.Block
+	Blocks(from int) []blockgen.Block
 }
 
-func (n *Node) Blocks() []blockgen.Block {
-	return n.blocks
+func (n *Node) Blocks(from int) []blockgen.Block {
+	return n.blocks[from:]
 }
 
 func NewNode(mesh Mesh) *Node {
