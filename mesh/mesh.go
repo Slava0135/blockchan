@@ -17,7 +17,7 @@ func (m *ForkMesh) AllExistingBlocks(from int) []blockgen.Block {
 			continue
 		}
 		if len(fork.Blocks()) > len(longest) {
-			longest = fork.Blocks() 
+			longest = fork.Blocks()
 		}
 	}
 	return longest

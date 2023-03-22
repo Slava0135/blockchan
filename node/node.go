@@ -9,7 +9,7 @@ type Node struct {
 	Mesh      Mesh
 	Enabled   bool
 	blocks    []blockgen.Block
-	shutdown   chan struct{}
+	shutdown  chan struct{}
 	inProcess *bool
 }
 
@@ -33,7 +33,7 @@ func NewNode(mesh Mesh) *Node {
 	var node = &Node{}
 	node.Mesh = mesh
 	node.shutdown = make(chan struct{})
-	node.inProcess = new(bool) 
+	node.inProcess = new(bool)
 	return node
 }
 
