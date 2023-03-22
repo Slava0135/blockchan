@@ -65,18 +65,19 @@ func (n *Node) ProcessNextBlock() {
 		case <-n.shutdown:
 			return
 		case b := <-n.Mesh.ReceiveChan(n):
-			if len(n.blocks) > b.Index {
+			var last = n.blocks[len(n.blocks)-1]
+			if last.Index > b.Index {
 				continue
-			}
-			if len(n.blocks) < b.Index {
-				n.blocks = n.Mesh.AllExistingBlocks(0)
-				return
 			}
 			var chain []blockgen.Block
 			chain = append(chain, n.blocks...)
-			chain = append(chain, b)
+			if last.Index == b.Index-1 {
+				chain = append(chain, b)
+			} else {
+				chain = append(chain, n.Mesh.AllExistingBlocks(last.Index+1)...)
+			}
 			if validate.IsValidChain(chain) {
-				n.blocks = append(n.blocks, b)
+				n.blocks = chain
 				return
 			}
 		case b := <-nextBlock:
