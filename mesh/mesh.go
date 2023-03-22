@@ -19,12 +19,16 @@ func (m *ForkMesh) AllExistingBlocks() []blockgen.Block {
 	return longest
 }
 
-func (m *ForkMesh) SendBlock(from node.Fork, b blockgen.Block) {
+func (m *ForkMesh) SendBlock(from node.Fork, b blockgen.Block) bool {
+	if !b.HasValidHash() {
+		return false
+	}
 	for fork, ch := range m.receiveChannels {
 		if fork != from {
 			ch <- b
 		}
 	}
+	return true
 }
 
 func (m *ForkMesh) ReceiveChan(f node.Fork) chan blockgen.Block {

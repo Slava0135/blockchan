@@ -15,7 +15,7 @@ type Node struct {
 
 type Mesh interface {
 	AllExistingBlocks() []blockgen.Block
-	SendBlock(from Fork, b blockgen.Block)
+	SendBlock(from Fork, b blockgen.Block) bool
 	ReceiveChan(Fork) chan blockgen.Block
 	Connect(Fork)
 	Disconnect(Fork)
@@ -65,9 +65,6 @@ func (n *Node) ProcessNextBlock() {
 		case <-n.shutdown:
 			return
 		case b := <-n.Mesh.ReceiveChan(n):
-			if !b.HasValidHash() {
-				continue
-			}
 			if len(n.blocks) > b.Index {
 				continue
 			}

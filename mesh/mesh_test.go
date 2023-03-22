@@ -105,3 +105,13 @@ func TestForkMeshAllExistingBlocks_ThreeForks(t *testing.T) {
 		t.Fatalf("got %d blocks; want %d blocks", got, want)
 	}
 }
+
+func TestForkMeshSendBlock_CantSendInvalidBlock(t *testing.T) {
+	var mesh = NewForkMesh()
+	var fork = newTestFork(mesh)
+	var block = blockgen.GenerateGenesisBlock()
+	block.Nonce += 1
+	if mesh.SendBlock(fork, block) {
+		t.Fatalf("sent invalid block")
+	}
+}

@@ -18,8 +18,9 @@ func (mesh *testMesh) AllExistingBlocks() []blockgen.Block {
 	return mesh.existingBlocks
 }
 
-func (mesh *testMesh) SendBlock(f Fork, b blockgen.Block) {
+func (mesh *testMesh) SendBlock(f Fork, b blockgen.Block) bool {
 	mesh.receivedBlocks = append(mesh.receivedBlocks, b)
+	return true
 }
 
 func (mesh *testMesh) ReceiveChan(f Fork) chan blockgen.Block {
@@ -188,23 +189,6 @@ func TestNodeProcessNextBlock_AcceptMissedBlock(t *testing.T) {
 	}
 	if node.Blocks()[nextnext.Index].Data != data {
 		t.Fatalf("node did not saved received block")
-	}
-}
-
-func TestNodeProcessNextBlock_RejectMissedBlock(t *testing.T) {
-	var mesh = newTestMesh()
-	var node = NewNode(&mesh)
-	var last = mesh.existingBlocks[len(mesh.existingBlocks)-1]
-	var next = blockgen.GenerateNextFrom(last, blockgen.Data{}, nil)
-	var nextnext = blockgen.GenerateNextFrom(next, blockgen.Data{}, nil)
-	nextnext.Hash.Reset()
-	node.Enable()
-	go node.ProcessNextBlock()
-	mesh.existingBlocks = append(mesh.existingBlocks, next, nextnext)
-	mesh.chanToNode <- nextnext
-	node.Disable()
-	if mesh.timesAskedForBlocks > 1 {
-		t.Fatalf("node asked for blocks when it got invalid block ahead")
 	}
 }
 
