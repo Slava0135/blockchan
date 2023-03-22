@@ -37,10 +37,10 @@ func (n *Node) Start() {
 		n.Mesh.SendBlock(n, n.Blocks[0])
 	}
 	n.IsRunning = true
-	go n.Run()
+	go n.run()
 }
 
-func (n *Node) Run() {
+func (n *Node) run() {
 	var cancel = make(chan struct{})
 	var nextBlock = make(chan blockgen.Block)
 	go generateNextFrom(n.Blocks[len(n.Blocks)-1], nextBlock, cancel)
