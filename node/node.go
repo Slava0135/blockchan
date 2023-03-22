@@ -6,21 +6,31 @@ import (
 )
 
 type Node struct {
-	Link      Link
-	Blocks    []blockgen.Block
+	Mesh      Mesh
 	IsRunning bool
+	blocks    []blockgen.Block
 	shutdown  chan struct{}
 }
 
-type Link interface {
+type Mesh interface {
 	AllExistingBlocks() []blockgen.Block
-	SendBlock(blockgen.Block)
-	ReceiveChan() chan blockgen.Block
+	SendBlock(from Fork, b blockgen.Block)
+	ReceiveChan(Fork) chan blockgen.Block
+	Connect(Fork)
+	Disconnect(Fork)
 }
 
-func NewNode(link Link) Node {
-	var node = Node{}
-	node.Link = link
+type Fork interface {
+	Blocks() []blockgen.Block
+}
+
+func (n *Node) Blocks() []blockgen.Block {
+	return n.blocks
+}
+
+func NewNode(mesh Mesh) *Node {
+	var node = &Node{}
+	node.Mesh = mesh
 	node.shutdown = make(chan struct{})
 	return node
 }
@@ -29,39 +39,40 @@ func (n *Node) Start() {
 	if n.IsRunning {
 		panic("node was already running!")
 	}
-	n.Blocks = n.Link.AllExistingBlocks()
-	if len(n.Blocks) == 0 {
-		n.Blocks = append(n.Blocks, blockgen.GenerateGenesisBlock())
-		n.Link.SendBlock(n.Blocks[0])
+	n.blocks = n.Mesh.AllExistingBlocks()
+	if len(n.blocks) == 0 {
+		n.blocks = append(n.blocks, blockgen.GenerateGenesisBlock())
+		n.Mesh.SendBlock(n, n.blocks[0])
 	}
 	n.IsRunning = true
-	go n.Run()
+	n.Mesh.Connect(n)
+	go n.run()
 }
 
-func (n *Node) Run() {
+func (n *Node) run() {
 	var cancel = make(chan struct{})
 	var nextBlock = make(chan blockgen.Block)
-	go generateNextFrom(n.Blocks[len(n.Blocks)-1], nextBlock, cancel)
+	go generateNextFrom(n.blocks[len(n.blocks)-1], nextBlock, cancel)
 	for {
 		select {
 		case <-n.shutdown:
 			return
-		case b := <-n.Link.ReceiveChan():
+		case b := <-n.Mesh.ReceiveChan(n):
 			if !b.HasValidHash() {
 				continue
 			}
-			if len(n.Blocks) < b.Index {
-				n.Blocks = n.Link.AllExistingBlocks()
+			if len(n.blocks) < b.Index {
+				n.blocks = n.Mesh.AllExistingBlocks()
 				continue
 			}
-			if len(n.Blocks) > b.Index {
+			if len(n.blocks) > b.Index {
 				continue
 			}
 			var chain []blockgen.Block
-			chain = append(chain, n.Blocks...)
+			chain = append(chain, n.blocks...)
 			chain = append(chain, b)
 			if validate.IsValidChain(chain) {
-				n.Blocks = append(n.Blocks, b)
+				n.blocks = append(n.blocks, b)
 				cancel <- struct{}{}
 			}
 		case b := <-nextBlock:
@@ -69,13 +80,13 @@ func (n *Node) Run() {
 				continue
 			}
 			var chain []blockgen.Block
-			chain = append(chain, n.Blocks...)
+			chain = append(chain, n.blocks...)
 			chain = append(chain, b)
 			if validate.IsValidChain(chain) {
-				n.Blocks = append(n.Blocks, b)
-				n.Link.SendBlock(b)
+				n.blocks = append(n.blocks, b)
+				n.Mesh.SendBlock(n, b)
 			}
-			go generateNextFrom(n.Blocks[len(n.Blocks)-1], nextBlock, cancel)
+			go generateNextFrom(n.blocks[len(n.blocks)-1], nextBlock, cancel)
 		}
 	}
 }
@@ -88,6 +99,7 @@ func (n *Node) Shutdown() {
 	if !n.IsRunning {
 		panic("node was not running!")
 	}
+	n.Mesh.Disconnect(n)
 	n.shutdown <- struct{}{}
 	n.IsRunning = false
 }
