@@ -78,6 +78,10 @@ func TestForkMeshConnection_EarlyReceive(t *testing.T) {
 func TestForkMeshAllExistingBlocks(t *testing.T) {
 	var mesh = NewForkMesh()
 	var fork = newTestFork(mesh)
+	var chain = []blockgen.Block{blockgen.GenerateGenesisBlock()}
+	for i := 0; i < 3; i++ {
+		chain = append(chain, blockgen.GenerateNextFrom(chain[i], blockgen.Data{}, nil))
+	}
 	if len(mesh.AllExistingBlocks()) != len(fork.Blocks()) {
 		t.Fatalf("mesh did not get existing blocks")
 	}
