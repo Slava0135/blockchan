@@ -24,25 +24,25 @@ func (m *ForkMesh) SendBlock(from node.Fork, b blockgen.Block) {
 	}
 }
 
-func (m *ForkMesh) ReceiveChan(n node.Fork) chan blockgen.Block {
+func (m *ForkMesh) ReceiveChan(f node.Fork) chan blockgen.Block {
 	for k, v := range m.receiveChannels {
-		if k == n {
+		if k == f {
 			return v
 		}
 	}
 	panic("node not connected to mesh tried to get receive channel")
 }
 
-func (m *ForkMesh) Connect(n node.Fork) {
-	m.receiveChannels[n] = make(chan blockgen.Block)
+func (m *ForkMesh) Connect(f node.Fork) {
+	m.receiveChannels[f] = make(chan blockgen.Block)
 }
 
-func (m *ForkMesh) Disconnect(n node.Fork) {
-	close(m.receiveChannels[n])
-	m.receiveChannels[n] = nil
+func (m *ForkMesh) Disconnect(f node.Fork) {
+	close(m.receiveChannels[f])
+	delete(m.receiveChannels, f)
 }
 
-func NewNodeMesh() *ForkMesh {
+func NewForkMesh() *ForkMesh {
 	var mesh = &ForkMesh{}
 	mesh.receiveChannels = make(map[node.Fork]chan blockgen.Block)
 	return mesh

@@ -4,82 +4,87 @@ import (
 	"slava0135/blockchan/blockgen"
 	"slava0135/blockchan/node"
 	"testing"
-	"time"
 )
 
-func TestNodeMesh_Interface(t *testing.T) {
+type testFork struct {
+	blocks []blockgen.Block
+}
+
+func (f *testFork) Blocks() []blockgen.Block {
+	return f.blocks
+}
+
+func newTestFork(mesh node.Mesh) *testFork {
+	var fork = &testFork{}
+	mesh.Connect(fork)
+	return fork
+}
+
+func TestForkMesh_Interface(t *testing.T) {
 	var _ node.Mesh = &ForkMesh{}
 }
 
-func TestNodeMesh_SendAndReceive(t *testing.T) {
-	var mesh = NewNodeMesh()
-	var nodeFrom = node.NewNode(mesh)
-	mesh.Connect(nodeFrom)
-	var nodeTo = node.NewNode(mesh)
-	mesh.Connect(nodeTo)
+func TestForkMesh_SendAndReceive(t *testing.T) {
+	var mesh = NewForkMesh()
+	var forkFrom = newTestFork(mesh)
+	var forkTo = newTestFork(mesh)
 	var sent = blockgen.GenerateGenesisBlock()
-	go mesh.SendBlock(nodeFrom, sent)
-	var received = <-mesh.ReceiveChan(nodeTo)
+	go mesh.SendBlock(forkFrom, sent)
+	var received = <-mesh.ReceiveChan(forkTo)
 	if received != sent {
 		t.Fatalf("block was not sent")
 	}
 }
 
-func TestNodeMeshSendBlock_Loopback(t *testing.T) {
-	var mesh = NewNodeMesh()
-	var node = node.NewNode(mesh)
-	mesh.Connect(node)
+func TestForkMeshSendBlock_Loopback(t *testing.T) {
+	var mesh = NewForkMesh()
+	var fork = newTestFork(mesh)
 	var block = blockgen.GenerateGenesisBlock()
-	go mesh.SendBlock(node, block)
+	go mesh.SendBlock(fork, block)
 	select {
-	case <-mesh.ReceiveChan(node):
+	case <-mesh.ReceiveChan(fork):
 		t.Fatalf("mesh tried to send block back to sender")
 	default:
 	}
 }
 
-func TestNodeMesh_ThreeNodes(t *testing.T) {
-	var mesh = NewNodeMesh()
-	var nodeFrom = node.NewNode(mesh)
-	mesh.Connect(nodeFrom)
-	var nodeTo1 = node.NewNode(mesh)
-	mesh.Connect(nodeTo1)
-	var nodeTo2 = node.NewNode(mesh)
-	mesh.Connect(nodeTo2)
+func TestForkMesh_ThreeForks(t *testing.T) {
+	var mesh = NewForkMesh()
+	var forkFrom = newTestFork(mesh)
+	var forkTo1 = newTestFork(mesh)
+	var forkTo2 = newTestFork(mesh)
 	var block = blockgen.GenerateGenesisBlock()
-	go mesh.SendBlock(nodeFrom, block)
-	var received = <-mesh.ReceiveChan(nodeTo1)
+	go mesh.SendBlock(forkFrom, block)
+	var received = <-mesh.ReceiveChan(forkTo1)
 	if received != block {
-		t.Fatalf("block was not sent to first node")
+		t.Fatalf("block was not sent to first fork")
 	}
 	select {
-	case <-mesh.ReceiveChan(nodeTo2):
+	case <-mesh.ReceiveChan(forkTo2):
 	default:
-		t.Fatalf("block was not sent to second node")
+		t.Fatalf("block was not sent to second fork")
 	}
 }
 
-func TestNodeMeshConnection_EarlyReceive(t *testing.T) {
-	var mesh = NewNodeMesh()
-	var node = &node.Node{}
+func TestForkMeshConnection_EarlyReceive(t *testing.T) {
+	var mesh = NewForkMesh()
+	var fork = newTestFork(mesh)
+	mesh.Disconnect(fork)
 	defer func() { _ = recover() }()
-	mesh.ReceiveChan(node)
-	t.Fatalf("node got receive channel without connecting to mesh")
+	mesh.ReceiveChan(fork)
+	t.Fatalf("fork got receive channel without connecting to mesh")
 }
 
-func TestNodeMeshAllExistingBlocks(t *testing.T) {
-	var mesh = NewNodeMesh()
-	var node = node.NewNode(mesh)
-	node.Start()
-	time.Sleep(time.Second)
-	node.Shutdown()
-	if len(mesh.AllExistingBlocks()) != len(node.Blocks()) {
+func TestForkMeshAllExistingBlocks(t *testing.T) {
+	var mesh = NewForkMesh()
+	var fork = newTestFork(mesh)
+	if len(mesh.AllExistingBlocks()) != len(fork.Blocks()) {
 		t.Fatalf("mesh did not get existing blocks")
 	}
 }
 
-func TestNodeMeshAllExistingBlocks_NoNodes(t *testing.T) {
-	var mesh = NewNodeMesh()
+func TestForkMeshAllExistingBlocks_NoForks(t *testing.T) {
+	var mesh = NewForkMesh()
 	if len(mesh.AllExistingBlocks()) != 0 {
 		t.Fatalf("mesh found non existant blocks")
 	}
