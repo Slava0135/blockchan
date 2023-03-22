@@ -66,15 +66,21 @@ func TestAreSameChains_SameChains(t *testing.T) {
 }
 
 func TestAreSameChains_DifferentChains(t *testing.T) {
-	var chain1 = []blockgen.Block{blockgen.GenerateGenesisBlock()}
-	for i := byte(0); i < 3; i += 1 {
-		chain1 = append(chain1, blockgen.GenerateNextFrom(chain1[i], blockgen.Data{1}, nil))
+	var chain = []blockgen.Block{blockgen.GenerateGenesisBlock()}
+	for i := byte(0); i < 5; i += 1 {
+		chain = append(chain, blockgen.GenerateNextFrom(chain[i], blockgen.Data{1}, nil))
 	}
-	var chain2 = []blockgen.Block{blockgen.GenerateGenesisBlock()}
-	for i := byte(0); i < 3; i += 1 {
-		chain2 = append(chain2, blockgen.GenerateNextFrom(chain2[i], blockgen.Data{2}, nil))
+	if AreSameChains(chain[0:2], chain[2:4]) {
+		t.Fatalf("different chains are same")
 	}
-	if AreSameChains(chain1, chain2) {
+}
+
+func TestAreSameChains_DifferentLengths(t *testing.T) {
+	var chain = []blockgen.Block{blockgen.GenerateGenesisBlock()}
+	for i := byte(0); i < 5; i += 1 {
+		chain = append(chain, blockgen.GenerateNextFrom(chain[i], blockgen.Data{1}, nil))
+	}
+	if AreSameChains(chain[0:2], chain[0:4]) {
 		t.Fatalf("different chains are same")
 	}
 }

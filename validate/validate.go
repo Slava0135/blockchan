@@ -22,6 +22,9 @@ func IsValidChain(chain []blockgen.Block) bool {
 }
 
 func AreSameChains(a, b []blockgen.Block) bool {
+	if len(a) != len(b) {
+		return false
+	}
 	for i := range a {
 		if string(a[i].Hash.Sum(nil)) != string(b[i].Hash.Sum(nil)) {
 			return false
