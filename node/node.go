@@ -6,21 +6,21 @@ import (
 )
 
 type Node struct {
-	Link      Link
+	Mesh      Mesh
 	Blocks    []blockgen.Block
 	IsRunning bool
 	shutdown  chan struct{}
 }
 
-type Link interface {
+type Mesh interface {
 	AllExistingBlocks() []blockgen.Block
 	SendBlock(blockgen.Block)
 	ReceiveChan() chan blockgen.Block
 }
 
-func NewNode(link Link) Node {
+func NewNode(mesh Mesh) Node {
 	var node = Node{}
-	node.Link = link
+	node.Mesh = mesh
 	node.shutdown = make(chan struct{})
 	return node
 }
@@ -29,10 +29,10 @@ func (n *Node) Start() {
 	if n.IsRunning {
 		panic("node was already running!")
 	}
-	n.Blocks = n.Link.AllExistingBlocks()
+	n.Blocks = n.Mesh.AllExistingBlocks()
 	if len(n.Blocks) == 0 {
 		n.Blocks = append(n.Blocks, blockgen.GenerateGenesisBlock())
-		n.Link.SendBlock(n.Blocks[0])
+		n.Mesh.SendBlock(n.Blocks[0])
 	}
 	n.IsRunning = true
 	go n.Run()
@@ -46,12 +46,12 @@ func (n *Node) Run() {
 		select {
 		case <-n.shutdown:
 			return
-		case b := <-n.Link.ReceiveChan():
+		case b := <-n.Mesh.ReceiveChan():
 			if !b.HasValidHash() {
 				continue
 			}
 			if len(n.Blocks) < b.Index {
-				n.Blocks = n.Link.AllExistingBlocks()
+				n.Blocks = n.Mesh.AllExistingBlocks()
 				continue
 			}
 			if len(n.Blocks) > b.Index {
@@ -73,7 +73,7 @@ func (n *Node) Run() {
 			chain = append(chain, b)
 			if validate.IsValidChain(chain) {
 				n.Blocks = append(n.Blocks, b)
-				n.Link.SendBlock(b)
+				n.Mesh.SendBlock(b)
 			}
 			go generateNextFrom(n.Blocks[len(n.Blocks)-1], nextBlock, cancel)
 		}
