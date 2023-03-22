@@ -13,7 +13,7 @@ type ForkMesh struct {
 func (m *ForkMesh) AllExistingBlocks(from int) []blockgen.Block {
 	var longest []blockgen.Block
 	for fork := range m.receiveChannels {
-		var chain = fork.Blocks(0)
+		var chain = fork.Blocks(from)
 		if !validate.IsValidChain(chain) {
 			continue
 		}

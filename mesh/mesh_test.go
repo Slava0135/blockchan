@@ -129,3 +129,17 @@ func TestForkMeshAllExistingBlocks_IgnoreInvalidChains(t *testing.T) {
 		t.Fatalf("mesh accepted invalid chain")
 	}
 }
+
+func TestForkMeshAllExistingBlocks_CheckIndex(t *testing.T) {
+	var mesh = NewForkMesh()
+	var fork = newTestFork(mesh)
+	var chain = []blockgen.Block{blockgen.GenerateGenesisBlock()}
+	for i := 0; i < 3; i++ {
+		chain = append(chain, blockgen.GenerateNextFrom(chain[i], blockgen.Data{}, nil))
+	}
+	fork.blocks = chain
+	var from = 2
+	if mesh.AllExistingBlocks(from)[0].Index != from {
+		t.Fatalf("mesh accepted chain with different index")
+	} 
+}
