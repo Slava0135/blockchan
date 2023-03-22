@@ -71,3 +71,10 @@ func TestNodeMeshAllExistingBlocks(t *testing.T) {
 		t.Fatalf("mesh did not get existing blocks")
 	}
 }
+
+func TestNodeMeshAllExistingBlocks_NoNodes(t *testing.T) {
+	var mesh = NewNodeMesh()
+	if len(mesh.AllExistingBlocks()) != 0 {
+		t.Fatalf("mesh found non existant blocks")
+	}
+}
