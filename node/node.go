@@ -16,13 +16,15 @@ type Mesh interface {
 	AllExistingBlocks() []blockgen.Block
 	SendBlock(from *Node, b blockgen.Block)
 	ReceiveChan(*Node) chan blockgen.Block
+	Connect(*Node)
 }
 
 func NewNode(mesh Mesh) *Node {
-	var node = Node{}
+	var node = &Node{}
 	node.Mesh = mesh
 	node.shutdown = make(chan struct{})
-	return &node
+	mesh.Connect(node)
+	return node
 }
 
 func (n *Node) Start() {

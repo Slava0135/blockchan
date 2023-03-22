@@ -25,12 +25,29 @@ func TestNodeMesh_SendAndReceive(t *testing.T) {
 func TestNodeMesh_SendLoopback(t *testing.T) {
 	var mesh = NewNodeMesh()
 	var node = node.NewNode(mesh)
-	defer func() { 
-		if r := recover(); r != nil {
-			t.Fatalf("mesh tried to send block back to sender")
-		}
-	}()
-	var sent = blockgen.GenerateGenesisBlock()
-	close(mesh.ReceiveChan(node))
-	mesh.SendBlock(node, sent)
+	var block = blockgen.GenerateGenesisBlock()
+	go mesh.SendBlock(node, block)
+	select {
+	case <-mesh.ReceiveChan(node):
+		t.Fatalf("mesh tried to send block back to sender")
+	default:
+	}
+}
+
+func TestNodeMesh_ThreeNodes(t *testing.T) {
+	var mesh = NewNodeMesh()
+	var nodeFrom = node.NewNode(mesh)
+	var nodeTo1 = node.NewNode(mesh)
+	var nodeTo2 = node.NewNode(mesh)
+	var block = blockgen.GenerateGenesisBlock()
+	go mesh.SendBlock(nodeFrom, block)
+	var received = <-mesh.ReceiveChan(nodeTo1)
+	if received != block {
+		t.Fatalf("block was not sent to first node")
+	}
+	select {
+	case <-mesh.ReceiveChan(nodeTo2):
+	default:
+		t.Fatalf("block was not sent to second node")
+	}
 }

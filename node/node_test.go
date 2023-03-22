@@ -26,6 +26,9 @@ func (mesh *testMesh) ReceiveChan(n *Node) chan blockgen.Block {
 	return mesh.chanToNode
 }
 
+func (mesh *testMesh) Connect(n *Node) {
+}
+
 func newTestmesh() testMesh {
 	var mesh = testMesh{}
 	mesh.existingBlocks = append(mesh.existingBlocks, blockgen.GenerateGenesisBlock())

@@ -27,9 +27,11 @@ func (m *NodeMesh) ReceiveChan(n *node.Node) chan blockgen.Block {
 			return v
 		}
 	}
-	var new = make(chan blockgen.Block)
-	m.receiveChannels[n] = new
-	return new
+	panic("node not connected to mesh tried to get receive channel")
+}
+
+func (m *NodeMesh) Connect(n *node.Node) {
+	m.receiveChannels[n] = make(chan blockgen.Block)
 }
 
 func NewNodeMesh() *NodeMesh {
