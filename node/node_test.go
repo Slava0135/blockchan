@@ -84,7 +84,7 @@ func TestNodeStart_Genesis(t *testing.T) {
 	}
 }
 
-func TestNodeRun_Shutdown(t *testing.T) {
+func TestNodeDisable(t *testing.T) {
 	var mesh = testMesh{}
 	var node = NewNode(&mesh)
 	node.Enable()
@@ -97,23 +97,23 @@ func TestNodeRun_Shutdown(t *testing.T) {
 	}
 }
 
-func TestNodeRun_AlreadyRunning(t *testing.T) {
+func TestNodeEnable_AlreadyEnabled(t *testing.T) {
 	var mesh = testMesh{}
 	var node = NewNode(&mesh)
 	defer func() { _ = recover() }()
 	node.Enable()
 	node.Enable()
-	t.Fatalf("should have panicked because node was already running")
+	t.Fatalf("should have panicked because node was already processing next block")
 }
 
-func TestNodeShutdown_AlreadyShutdown(t *testing.T) {
+func TestNodeDisable_AlreadyDisabled(t *testing.T) {
 	var mesh = testMesh{}
 	var node = NewNode(&mesh)
 	defer func() { _ = recover() }()
 	node.Enable()
 	node.Disable()
 	node.Disable()
-	t.Fatalf("should have panicked because node was already shutdown")
+	t.Fatalf("should have panicked because node was already disabled")
 }
 
 func TestNodeRun_SendBlocks(t *testing.T) {
@@ -137,7 +137,7 @@ func TestNodeRun_SendBlocks(t *testing.T) {
 	}
 }
 
-func TestNodeRun_AcceptReceivedBlock(t *testing.T) {
+func TestNodeProcessNextBlock_AcceptReceivedBlock(t *testing.T) {
 	var mesh = newTestMesh()
 	var node = NewNode(&mesh)
 	var data = testData()
@@ -152,7 +152,7 @@ func TestNodeRun_AcceptReceivedBlock(t *testing.T) {
 	}
 }
 
-func TestNodeRun_RejectReceivedBlock(t *testing.T) {
+func TestNodeProcessNextBlock_RejectReceivedBlock(t *testing.T) {
 	var mesh = newTestMesh()
 	var node = NewNode(&mesh)
 	var data = testData()
@@ -168,7 +168,7 @@ func TestNodeRun_RejectReceivedBlock(t *testing.T) {
 	}
 }
 
-func TestNodeRun_AcceptMissedBlock(t *testing.T) {
+func TestNodeProcessNextBlock_AcceptMissedBlock(t *testing.T) {
 	var mesh = newTestMesh()
 	var node = NewNode(&mesh)
 	var data = testData()
@@ -191,7 +191,7 @@ func TestNodeRun_AcceptMissedBlock(t *testing.T) {
 	}
 }
 
-func TestNodeRun_RejectMissedBlock(t *testing.T) {
+func TestNodeProcessNextBlock_RejectMissedBlock(t *testing.T) {
 	var mesh = newTestMesh()
 	var node = NewNode(&mesh)
 	var last = mesh.existingBlocks[len(mesh.existingBlocks)-1]
@@ -208,7 +208,7 @@ func TestNodeRun_RejectMissedBlock(t *testing.T) {
 	}
 }
 
-func TestNodeRun_IgnoreOldBlock(t *testing.T) {
+func TestNodeProcessNextBlock_IgnoreOldBlock(t *testing.T) {
 	var mesh = newTestMesh()
 	var node = NewNode(&mesh)
 	var data = testData()
@@ -222,7 +222,7 @@ func TestNodeRun_IgnoreOldBlock(t *testing.T) {
 	}
 }
 
-func TestNodeRun_Connection(t *testing.T) {
+func TestNode_Connection(t *testing.T) {
 	var mesh = newTestMesh()
 	var node = NewNode(&mesh)
 	node.Enable()
