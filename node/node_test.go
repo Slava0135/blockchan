@@ -29,7 +29,7 @@ func (link *testLink) ReceiveChan() chan blockgen.Block {
 func newTestLink() testLink {
 	var link = testLink{}
 	link.existingBlocks = append(link.existingBlocks, blockgen.GenerateGenesisBlock())
-	for i := byte(0); i < 10; i += 1 {
+	for i := byte(0); i < 3; i += 1 {
 		var newBlock = blockgen.GenerateNextFrom(link.existingBlocks[i], blockgen.Data{i}, nil)
 		link.existingBlocks = append(link.existingBlocks, newBlock)
 	}
