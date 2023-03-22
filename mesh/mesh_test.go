@@ -106,7 +106,7 @@ func TestForkMeshAllExistingBlocks_ThreeForks(t *testing.T) {
 	}
 }
 
-func TestForkMeshSendBlock_dontSendInvalidBlock(t *testing.T) {
+func TestForkMeshSendBlock_DontSendInvalidBlock(t *testing.T) {
 	var mesh = NewForkMesh()
 	var fork = newTestFork(mesh)
 	var block = blockgen.GenerateGenesisBlock()
