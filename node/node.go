@@ -54,9 +54,12 @@ func (n *Node) ProcessNextBlock() {
 	if *n.inProcess {
 		panic("node was already processing next block!")
 	}
+	*n.inProcess = true
 	defer func() { *n.inProcess = false }()
+	var cancel = false
+	defer func() { cancel = true }()
 	var nextBlock = make(chan blockgen.Block, 1)
-	go generateNextFrom(n.blocks[len(n.blocks)-1], nextBlock, n.inProcess)
+	go generateNextFrom(n.blocks[len(n.blocks)-1], nextBlock, &cancel)
 	for {
 		select {
 		case <-n.shutdown:

@@ -234,3 +234,19 @@ func TestNode_Connection(t *testing.T) {
 		t.Fatalf("node did not disconnect from mesh when shutdown")
 	}
 }
+
+func TestNodeProcessNextBlock_DoubleProcess(t *testing.T) {
+	var mesh = newTestMesh()
+	var node = NewNode(&mesh)
+	node.Enable()
+	var success = new(bool)
+	go func() {
+		defer func() { _ = recover() }()
+		node.ProcessNextBlock()
+		*success = true
+	}()
+	node.ProcessNextBlock()
+	if *success {
+		t.Fatalf("node did not panic because of double processing")
+	}
+}
