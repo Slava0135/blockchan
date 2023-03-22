@@ -18,11 +18,11 @@ func (mesh *testMesh) AllExistingBlocks() []blockgen.Block {
 	return mesh.existingBlocks
 }
 
-func (mesh *testMesh) SendBlock(b blockgen.Block) {
+func (mesh *testMesh) SendBlock(n *Node, b blockgen.Block) {
 	mesh.receivedBlocks = append(mesh.receivedBlocks, b)
 }
 
-func (mesh *testMesh) ReceiveChan() chan blockgen.Block {
+func (mesh *testMesh) ReceiveChan(n *Node) chan blockgen.Block {
 	return mesh.chanToNode
 }
 

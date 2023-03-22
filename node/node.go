@@ -14,15 +14,15 @@ type Node struct {
 
 type Mesh interface {
 	AllExistingBlocks() []blockgen.Block
-	SendBlock(blockgen.Block)
-	ReceiveChan() chan blockgen.Block
+	SendBlock(from *Node, b blockgen.Block)
+	ReceiveChan(*Node) chan blockgen.Block
 }
 
-func NewNode(mesh Mesh) Node {
+func NewNode(mesh Mesh) *Node {
 	var node = Node{}
 	node.Mesh = mesh
 	node.shutdown = make(chan struct{})
-	return node
+	return &node
 }
 
 func (n *Node) Start() {
@@ -32,7 +32,7 @@ func (n *Node) Start() {
 	n.Blocks = n.Mesh.AllExistingBlocks()
 	if len(n.Blocks) == 0 {
 		n.Blocks = append(n.Blocks, blockgen.GenerateGenesisBlock())
-		n.Mesh.SendBlock(n.Blocks[0])
+		n.Mesh.SendBlock(n, n.Blocks[0])
 	}
 	n.IsRunning = true
 	go n.Run()
@@ -46,7 +46,7 @@ func (n *Node) Run() {
 		select {
 		case <-n.shutdown:
 			return
-		case b := <-n.Mesh.ReceiveChan():
+		case b := <-n.Mesh.ReceiveChan(n):
 			if !b.HasValidHash() {
 				continue
 			}
@@ -73,7 +73,7 @@ func (n *Node) Run() {
 			chain = append(chain, b)
 			if validate.IsValidChain(chain) {
 				n.Blocks = append(n.Blocks, b)
-				n.Mesh.SendBlock(b)
+				n.Mesh.SendBlock(n, b)
 			}
 			go generateNextFrom(n.Blocks[len(n.Blocks)-1], nextBlock, cancel)
 		}
