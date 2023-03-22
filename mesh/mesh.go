@@ -10,10 +10,13 @@ type ForkMesh struct {
 }
 
 func (m *ForkMesh) AllExistingBlocks() []blockgen.Block {
+	var longest []blockgen.Block
 	for k := range m.receiveChannels {
-		return k.Blocks()
+		if len(k.Blocks()) > len(longest) {
+			longest = k.Blocks() 
+		}
 	}
-	return nil
+	return longest
 }
 
 func (m *ForkMesh) SendBlock(from node.Fork, b blockgen.Block) {

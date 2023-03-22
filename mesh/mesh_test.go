@@ -75,21 +75,34 @@ func TestForkMeshConnection_EarlyReceive(t *testing.T) {
 	t.Fatalf("fork got receive channel without connecting to mesh")
 }
 
-func TestForkMeshAllExistingBlocks(t *testing.T) {
+func TestForkMeshAllExistingBlocks_ThreeForks(t *testing.T) {
 	var mesh = NewForkMesh()
-	var fork = newTestFork(mesh)
+	var fork1 = newTestFork(mesh)
+	var fork2 = newTestFork(mesh)
+	var fork3 = newTestFork(mesh)
 	var chain = []blockgen.Block{blockgen.GenerateGenesisBlock()}
 	for i := 0; i < 3; i++ {
 		chain = append(chain, blockgen.GenerateNextFrom(chain[i], blockgen.Data{}, nil))
 	}
-	if len(mesh.AllExistingBlocks()) != len(fork.Blocks()) {
-		t.Fatalf("mesh did not get existing blocks")
-	}
-}
-
-func TestForkMeshAllExistingBlocks_NoForks(t *testing.T) {
-	var mesh = NewForkMesh()
 	if len(mesh.AllExistingBlocks()) != 0 {
 		t.Fatalf("mesh found non existant blocks")
+	}
+	fork1.blocks = chain[0:2]
+	var got = len(mesh.AllExistingBlocks())
+	var want = len(fork1.Blocks())
+	if got != want {
+		t.Fatalf("got %d blocks; want %d blocks", got, want)
+	}
+	fork2.blocks = chain[0:4]
+	got = len(mesh.AllExistingBlocks())
+	want = len(fork2.Blocks())
+	if got != want {
+		t.Fatalf("got %d blocks; want %d blocks", got, want)
+	}
+	fork3.blocks = chain[0:3]
+	got = len(mesh.AllExistingBlocks())
+	want = len(fork2.Blocks())
+	if got != want {
+		t.Fatalf("got %d blocks; want %d blocks", got, want)
 	}
 }
