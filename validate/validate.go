@@ -20,3 +20,12 @@ func IsValidChain(chain []blockgen.Block) bool {
 	}
 	return true
 }
+
+func AreSameChains(a, b []blockgen.Block) bool {
+	for i := range a {
+		if string(a[i].Hash.Sum(nil)) != string(b[i].Hash.Sum(nil)) {
+			return false
+		}
+	}
+	return true
+}

@@ -20,9 +20,8 @@ func TestIsValidChain_InvalidHash(t *testing.T) {
 }
 
 func TestIsValidChain_ValidChain(t *testing.T) {
-	var gen = blockgen.GenerateGenesisBlock()
-	var chain = []blockgen.Block{gen}
-	for i := byte(0); i < 10; i += 1 {
+	var chain = []blockgen.Block{blockgen.GenerateGenesisBlock()}
+	for i := byte(0); i < 3; i += 1 {
 		chain = append(chain, blockgen.GenerateNextFrom(chain[i], blockgen.Data{}, nil))
 	}
 	if !IsValidChain(chain) {
@@ -53,5 +52,29 @@ func TestIsValidChain_WrongIndex(t *testing.T) {
 	}
 	if IsValidChain(chain) {
 		t.Fatalf("block with invalid index is valid")
+	}
+}
+
+func TestAreSameChains_SameChains(t *testing.T) {
+	var chain = []blockgen.Block{blockgen.GenerateGenesisBlock()}
+	for i := byte(0); i < 3; i += 1 {
+		chain = append(chain, blockgen.GenerateNextFrom(chain[i], blockgen.Data{}, nil))
+	}
+	if !AreSameChains(chain, chain) {
+		t.Fatalf("single chain is not the same")
+	}
+}
+
+func TestAreSameChains_DifferentChains(t *testing.T) {
+	var chain1 = []blockgen.Block{blockgen.GenerateGenesisBlock()}
+	for i := byte(0); i < 3; i += 1 {
+		chain1 = append(chain1, blockgen.GenerateNextFrom(chain1[i], blockgen.Data{1}, nil))
+	}
+	var chain2 = []blockgen.Block{blockgen.GenerateGenesisBlock()}
+	for i := byte(0); i < 3; i += 1 {
+		chain2 = append(chain2, blockgen.GenerateNextFrom(chain2[i], blockgen.Data{2}, nil))
+	}
+	if AreSameChains(chain1, chain2) {
+		t.Fatalf("different chains are same")
 	}
 }
