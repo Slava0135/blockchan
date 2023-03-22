@@ -13,9 +13,9 @@ type testMesh struct {
 	connected           bool
 }
 
-func (mesh *testMesh) AllExistingBlocks() []blockgen.Block {
+func (mesh *testMesh) AllExistingBlocks(from int) []blockgen.Block {
 	mesh.timesAskedForBlocks += 1
-	return mesh.existingBlocks
+	return mesh.existingBlocks[from:]
 }
 
 func (mesh *testMesh) SendBlock(f Fork, b blockgen.Block) bool {

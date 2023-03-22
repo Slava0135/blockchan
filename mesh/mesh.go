@@ -10,7 +10,7 @@ type ForkMesh struct {
 	receiveChannels map[node.Fork]chan blockgen.Block
 }
 
-func (m *ForkMesh) AllExistingBlocks() []blockgen.Block {
+func (m *ForkMesh) AllExistingBlocks(from int) []blockgen.Block {
 	var longest []blockgen.Block
 	for fork := range m.receiveChannels {
 		if !validate.IsValidChain(fork.Blocks()) {

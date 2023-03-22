@@ -14,7 +14,7 @@ type Node struct {
 }
 
 type Mesh interface {
-	AllExistingBlocks() []blockgen.Block
+	AllExistingBlocks(from int) []blockgen.Block
 	SendBlock(from Fork, b blockgen.Block) bool
 	ReceiveChan(Fork) chan blockgen.Block
 	Connect(Fork)
@@ -41,7 +41,7 @@ func (n *Node) Enable() {
 	if n.Enabled {
 		panic("node was already enabled!")
 	}
-	n.blocks = n.Mesh.AllExistingBlocks()
+	n.blocks = n.Mesh.AllExistingBlocks(0)
 	if len(n.blocks) == 0 {
 		n.blocks = append(n.blocks, blockgen.GenerateGenesisBlock())
 		n.Mesh.SendBlock(n, n.blocks[0])
@@ -69,7 +69,7 @@ func (n *Node) ProcessNextBlock() {
 				continue
 			}
 			if len(n.blocks) < b.Index {
-				n.blocks = n.Mesh.AllExistingBlocks()
+				n.blocks = n.Mesh.AllExistingBlocks(0)
 				return
 			}
 			var chain []blockgen.Block

@@ -84,23 +84,23 @@ func TestForkMeshAllExistingBlocks_ThreeForks(t *testing.T) {
 	for i := 0; i < 3; i++ {
 		chain = append(chain, blockgen.GenerateNextFrom(chain[i], blockgen.Data{}, nil))
 	}
-	if len(mesh.AllExistingBlocks()) != 0 {
+	if len(mesh.AllExistingBlocks(0)) != 0 {
 		t.Fatalf("mesh found non existant blocks")
 	}
 	fork1.blocks = chain[0:2]
-	var got = len(mesh.AllExistingBlocks())
+	var got = len(mesh.AllExistingBlocks(0))
 	var want = len(fork1.Blocks())
 	if got != want {
 		t.Fatalf("got %d blocks; want %d blocks", got, want)
 	}
 	fork2.blocks = chain[0:4]
-	got = len(mesh.AllExistingBlocks())
+	got = len(mesh.AllExistingBlocks(0))
 	want = len(fork2.Blocks())
 	if got != want {
 		t.Fatalf("got %d blocks; want %d blocks", got, want)
 	}
 	fork3.blocks = chain[0:3]
-	got = len(mesh.AllExistingBlocks())
+	got = len(mesh.AllExistingBlocks(0))
 	if got != want {
 		t.Fatalf("got %d blocks; want %d blocks", got, want)
 	}
@@ -122,7 +122,7 @@ func TestForkMeshAllExistingBlocks_IgnoreInvalidChains(t *testing.T) {
 	var block = blockgen.GenerateGenesisBlock()
 	block.Nonce += 1
 	fork.blocks = []blockgen.Block{block}
-	if len(mesh.AllExistingBlocks()) != 0 {
+	if len(mesh.AllExistingBlocks(0)) != 0 {
 		t.Fatalf("mesh accepted invalid chain")
 	}
 }
