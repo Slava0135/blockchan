@@ -51,3 +51,11 @@ func TestNodeMesh_ThreeNodes(t *testing.T) {
 		t.Fatalf("block was not sent to second node")
 	}
 }
+
+func TestNodeMesh_ConnectFirst(t *testing.T) {
+	var mesh = NewNodeMesh()
+	var node = &node.Node{}
+	defer func() { _ = recover() }()
+	mesh.ReceiveChan(node)
+	t.Fatalf("node got receive channel without connecting to mesh")
+}
