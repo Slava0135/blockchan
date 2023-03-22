@@ -109,12 +109,12 @@ func TestHasValidHash_Nil(t *testing.T) {
 
 func TestGenerateNextFrom_Cancel(t *testing.T) {
 	var prev = GenerateGenesisBlock()
-	var cancel = make(chan struct{})
+	var cancel = false
 	var next Block 
 	go func() {
-		next = GenerateNextFrom(prev, Data{}, cancel)
+		next = GenerateNextFrom(prev, Data{}, &cancel)
 	}()
-	cancel <- struct{}{} 
+	cancel = true
 	if next.HasValidHash() {
 		t.Fatalf("block generation was not cancelled")
 	}

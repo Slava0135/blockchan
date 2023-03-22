@@ -3,7 +3,6 @@ package node
 import (
 	"slava0135/blockchan/blockgen"
 	"testing"
-	"time"
 )
 
 type testMesh struct {
@@ -35,7 +34,7 @@ func (mesh *testMesh) Disconnect(f Fork) {
 	mesh.connected = false
 }
 
-func newTestmesh() testMesh {
+func newTestMesh() testMesh {
 	var mesh = testMesh{}
 	mesh.existingBlocks = append(mesh.existingBlocks, blockgen.GenerateGenesisBlock())
 	for i := byte(0); i < 3; i += 1 {
@@ -54,10 +53,12 @@ func testData() blockgen.Data {
 }
 
 func TestNodeStart_GetBlocks(t *testing.T) {
-	var mesh = newTestmesh()
+	var mesh = newTestMesh()
 	var node = NewNode(&mesh)
-	node.Start()
-	node.Shutdown()
+	node.Enable()
+	node.ProcessNextBlock()
+	node.ProcessNextBlock()
+	node.Disable()
 	if mesh.timesAskedForBlocks == 0 {
 		t.Fatalf("node did not ask for blocks")
 	}
@@ -74,7 +75,7 @@ func TestNodeStart_GetBlocks(t *testing.T) {
 func TestNodeStart_Genesis(t *testing.T) {
 	var mesh = testMesh{}
 	var node = NewNode(&mesh)
-	node.Start()
+	node.Enable()
 	if len(node.Blocks()) == 0 {
 		t.Fatalf("node did not generate genesis block")
 	}
@@ -83,44 +84,46 @@ func TestNodeStart_Genesis(t *testing.T) {
 	}
 }
 
-func TestNodeRun_Shutdown(t *testing.T) {
+func TestNodeDisable(t *testing.T) {
 	var mesh = testMesh{}
 	var node = NewNode(&mesh)
-	node.Start()
-	if !node.IsRunning {
+	node.Enable()
+	if !node.Enabled {
 		t.Fatalf("node is not running after start")
 	}
-	node.Shutdown()
-	if node.IsRunning {
+	node.Disable()
+	if node.Enabled {
 		t.Fatalf("node is running after shutdown")
 	}
 }
 
-func TestNodeRun_AlreadyRunning(t *testing.T) {
+func TestNodeEnable_AlreadyEnabled(t *testing.T) {
 	var mesh = testMesh{}
 	var node = NewNode(&mesh)
 	defer func() { _ = recover() }()
-	node.Start()
-	node.Start()
-	t.Fatalf("should have panicked because node was already running")
+	node.Enable()
+	node.Enable()
+	t.Fatalf("should have panicked because node was already processing next block")
 }
 
-func TestNodeShutdown_AlreadyShutdown(t *testing.T) {
+func TestNodeDisable_AlreadyDisabled(t *testing.T) {
 	var mesh = testMesh{}
 	var node = NewNode(&mesh)
 	defer func() { _ = recover() }()
-	node.Start()
-	node.Shutdown()
-	node.Shutdown()
-	t.Fatalf("should have panicked because node was already shutdown")
+	node.Enable()
+	node.Disable()
+	node.Disable()
+	t.Fatalf("should have panicked because node was already disabled")
 }
 
 func TestNodeRun_SendBlocks(t *testing.T) {
 	var mesh = testMesh{}
 	var node = NewNode(&mesh)
-	node.Start()
-	time.Sleep(time.Second)
-	node.Shutdown()
+	node.Enable()
+	node.ProcessNextBlock()
+	node.ProcessNextBlock()
+	node.ProcessNextBlock()
+	node.Disable()
 	if len(node.Blocks()) != len(mesh.receivedBlocks) {
 		t.Fatalf("node blocks amount = %d not equals amount of sent blocks = %d", len(node.Blocks()), len(mesh.receivedBlocks))
 	}
@@ -134,48 +137,49 @@ func TestNodeRun_SendBlocks(t *testing.T) {
 	}
 }
 
-func TestNodeRun_AcceptReceivedBlock(t *testing.T) {
-	var mesh = newTestmesh()
+func TestNodeProcessNextBlock_AcceptReceivedBlock(t *testing.T) {
+	var mesh = newTestMesh()
 	var node = NewNode(&mesh)
 	var data = testData()
 	var last = mesh.existingBlocks[len(mesh.existingBlocks)-1]
 	var next = blockgen.GenerateNextFrom(last, data, nil)
-	node.Start()
-	time.Sleep(time.Millisecond) // wait until node start generate next block
+	node.Enable()
+	go node.ProcessNextBlock()
 	mesh.chanToNode <- next
-	node.Shutdown()
+	node.Disable()
 	if node.Blocks()[next.Index].Data != data {
 		t.Fatalf("node did not accept valid received block")
 	}
 }
 
-func TestNodeRun_RejectReceivedBlock(t *testing.T) {
-	var mesh = newTestmesh()
+func TestNodeProcessNextBlock_RejectReceivedBlock(t *testing.T) {
+	var mesh = newTestMesh()
 	var node = NewNode(&mesh)
 	var data = testData()
 	var last = mesh.existingBlocks[len(mesh.existingBlocks)-1]
 	var next = blockgen.GenerateNextFrom(last, data, nil)
 	next.Hash.Reset()
-	node.Start()
+	node.Enable()
+	go node.ProcessNextBlock()
 	mesh.chanToNode <- next
-	node.Shutdown()
+	node.Disable()
 	if len(node.Blocks()) > next.Index && node.Blocks()[next.Index].Data == data {
 		t.Fatalf("node accepted invalid received block")
 	}
 }
 
-func TestNodeRun_AcceptMissedBlock(t *testing.T) {
-	var mesh = newTestmesh()
+func TestNodeProcessNextBlock_AcceptMissedBlock(t *testing.T) {
+	var mesh = newTestMesh()
 	var node = NewNode(&mesh)
 	var data = testData()
 	var last = mesh.existingBlocks[len(mesh.existingBlocks)-1]
 	var next = blockgen.GenerateNextFrom(last, data, nil)
 	var nextnext = blockgen.GenerateNextFrom(next, data, nil)
-	node.Start()
-	time.Sleep(time.Millisecond)
+	node.Enable()
+	go node.ProcessNextBlock()
 	mesh.existingBlocks = append(mesh.existingBlocks, next, nextnext)
 	mesh.chanToNode <- nextnext
-	node.Shutdown()
+	node.Disable()
 	if mesh.timesAskedForBlocks < 2 {
 		t.Fatalf("node did not ask for blocks when it got block ahead")
 	}
@@ -187,44 +191,62 @@ func TestNodeRun_AcceptMissedBlock(t *testing.T) {
 	}
 }
 
-func TestNodeRun_RejectMissedBlock(t *testing.T) {
-	var mesh = newTestmesh()
+func TestNodeProcessNextBlock_RejectMissedBlock(t *testing.T) {
+	var mesh = newTestMesh()
 	var node = NewNode(&mesh)
 	var last = mesh.existingBlocks[len(mesh.existingBlocks)-1]
 	var next = blockgen.GenerateNextFrom(last, blockgen.Data{}, nil)
 	var nextnext = blockgen.GenerateNextFrom(next, blockgen.Data{}, nil)
 	nextnext.Hash.Reset()
-	node.Start()
+	node.Enable()
+	go node.ProcessNextBlock()
 	mesh.existingBlocks = append(mesh.existingBlocks, next, nextnext)
 	mesh.chanToNode <- nextnext
-	node.Shutdown()
+	node.Disable()
 	if mesh.timesAskedForBlocks > 1 {
 		t.Fatalf("node asked for blocks when it got invalid block ahead")
 	}
 }
 
-func TestNodeRun_IgnoreOldBlock(t *testing.T) {
-	var mesh = newTestmesh()
+func TestNodeProcessNextBlock_IgnoreOldBlock(t *testing.T) {
+	var mesh = newTestMesh()
 	var node = NewNode(&mesh)
 	var data = testData()
 	var old = blockgen.GenerateNextFrom(mesh.existingBlocks[0], data, nil)
-	node.Start()
+	node.Enable()
+	go node.ProcessNextBlock()
 	mesh.chanToNode <- old
-	node.Shutdown()
+	node.Disable()
 	if node.Blocks()[old.Index].Data == data {
 		t.Fatalf("node accepted received old block")
 	}
 }
 
-func TestNodeRun_Connection(t *testing.T) {
-	var mesh = newTestmesh()
+func TestNode_Connection(t *testing.T) {
+	var mesh = newTestMesh()
 	var node = NewNode(&mesh)
-	node.Start()
+	node.Enable()
 	if !mesh.connected {
 		t.Fatalf("node did not connect to mesh when started")
 	}
-	node.Shutdown()
+	node.Disable()
 	if mesh.connected {
 		t.Fatalf("node did not disconnect from mesh when shutdown")
+	}
+}
+
+func TestNodeProcessNextBlock_DoubleProcess(t *testing.T) {
+	var mesh = newTestMesh()
+	var node = NewNode(&mesh)
+	node.Enable()
+	var success = new(bool)
+	go func() {
+		defer func() { _ = recover() }()
+		node.ProcessNextBlock()
+		*success = true
+	}()
+	node.ProcessNextBlock()
+	if *success {
+		t.Fatalf("node did not panic because of double processing")
 	}
 }
