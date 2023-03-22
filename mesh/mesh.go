@@ -11,26 +11,26 @@ type ForkMesh struct {
 
 func (m *ForkMesh) AllExistingBlocks() []blockgen.Block {
 	var longest []blockgen.Block
-	for k := range m.receiveChannels {
-		if len(k.Blocks()) > len(longest) {
-			longest = k.Blocks() 
+	for fork := range m.receiveChannels {
+		if len(fork.Blocks()) > len(longest) {
+			longest = fork.Blocks() 
 		}
 	}
 	return longest
 }
 
 func (m *ForkMesh) SendBlock(from node.Fork, b blockgen.Block) {
-	for k, v := range m.receiveChannels {
-		if k != from {
-			v <- b
+	for fork, ch := range m.receiveChannels {
+		if fork != from {
+			ch <- b
 		}
 	}
 }
 
 func (m *ForkMesh) ReceiveChan(f node.Fork) chan blockgen.Block {
-	for k, v := range m.receiveChannels {
-		if k == f {
-			return v
+	for fork, ch := range m.receiveChannels {
+		if fork == f {
+			return ch
 		}
 	}
 	panic("node not connected to mesh tried to get receive channel")
