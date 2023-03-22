@@ -23,7 +23,7 @@ func TestNodeMesh_SendAndReceive(t *testing.T) {
 	}
 }
 
-func TestNodeMesh_SendLoopback(t *testing.T) {
+func TestNodeMeshSendBlock_Loopback(t *testing.T) {
 	var mesh = NewNodeMesh()
 	var node = node.NewNode(mesh)
 	var block = blockgen.GenerateGenesisBlock()
@@ -53,7 +53,7 @@ func TestNodeMesh_ThreeNodes(t *testing.T) {
 	}
 }
 
-func TestNodeMesh_ConnectFirst(t *testing.T) {
+func TestNodeMeshConnection_EarlyReceive(t *testing.T) {
 	var mesh = NewNodeMesh()
 	var node = &node.Node{}
 	defer func() { _ = recover() }()
@@ -61,7 +61,7 @@ func TestNodeMesh_ConnectFirst(t *testing.T) {
 	t.Fatalf("node got receive channel without connecting to mesh")
 }
 
-func TestNodeMesh_AllExistingBlocks(t *testing.T) {
+func TestNodeMeshAllExistingBlocks(t *testing.T) {
 	var mesh = NewNodeMesh()
 	var node = node.NewNode(mesh)
 	node.Start()
