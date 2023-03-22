@@ -21,3 +21,16 @@ func TestNodeMesh_SendAndReceive(t *testing.T) {
 		t.Fatalf("block was not sent")
 	}
 }
+
+func TestNodeMesh_SendLoopback(t *testing.T) {
+	var mesh = NewNodeMesh()
+	var node = node.NewNode(mesh)
+	defer func() { 
+		if r := recover(); r != nil {
+			t.Fatalf("mesh tried to send block back to sender")
+		}
+	}()
+	var sent = blockgen.GenerateGenesisBlock()
+	close(mesh.ReceiveChan(node))
+	mesh.SendBlock(node, sent)
+}

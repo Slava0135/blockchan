@@ -6,23 +6,34 @@ import (
 )
 
 type NodeMesh struct {
-	receiveChan chan blockgen.Block
+	receiveChannels map[*node.Node]chan blockgen.Block
 }
 
 func (m *NodeMesh) AllExistingBlocks() []blockgen.Block {
 	return nil
 }
 
-func (m *NodeMesh) SendBlock(n *node.Node, b blockgen.Block) {
-	m.receiveChan <- b
+func (m *NodeMesh) SendBlock(from *node.Node, b blockgen.Block) {
+	for k, v := range m.receiveChannels {
+		if k != from {
+			v <- b
+		}
+	}
 }
 
 func (m *NodeMesh) ReceiveChan(n *node.Node) chan blockgen.Block {
-	return m.receiveChan
+	for k, v := range m.receiveChannels {
+		if k == n {
+			return v
+		}
+	}
+	var new = make(chan blockgen.Block)
+	m.receiveChannels[n] = new
+	return new
 }
 
 func NewNodeMesh() *NodeMesh {
 	var mesh = &NodeMesh{}
-	mesh.receiveChan = make(chan blockgen.Block)
+	mesh.receiveChannels = make(map[*node.Node]chan blockgen.Block)
 	return mesh
 }
