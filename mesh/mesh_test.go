@@ -4,6 +4,7 @@ import (
 	"slava0135/blockchan/blockgen"
 	"slava0135/blockchan/node"
 	"testing"
+	"time"
 )
 
 func TestNodeMesh_Interface(t *testing.T) {
@@ -58,4 +59,15 @@ func TestNodeMesh_ConnectFirst(t *testing.T) {
 	defer func() { _ = recover() }()
 	mesh.ReceiveChan(node)
 	t.Fatalf("node got receive channel without connecting to mesh")
+}
+
+func TestNodeMesh_AllExistingBlocks(t *testing.T) {
+	var mesh = NewNodeMesh()
+	var node = node.NewNode(mesh)
+	node.Start()
+	time.Sleep(time.Second)
+	node.Shutdown()
+	if len(mesh.AllExistingBlocks()) != len(node.Blocks) {
+		t.Fatalf("mesh did not get existing blocks")
+	}
 }

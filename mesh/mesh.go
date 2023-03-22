@@ -10,6 +10,9 @@ type NodeMesh struct {
 }
 
 func (m *NodeMesh) AllExistingBlocks() []blockgen.Block {
+	for k := range m.receiveChannels {
+		return k.Blocks
+	}
 	return nil
 }
 
