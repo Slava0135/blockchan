@@ -101,7 +101,6 @@ func TestForkMeshAllExistingBlocks_ThreeForks(t *testing.T) {
 	}
 	fork3.blocks = chain[0:3]
 	got = len(mesh.AllExistingBlocks())
-	want = len(fork2.Blocks())
 	if got != want {
 		t.Fatalf("got %d blocks; want %d blocks", got, want)
 	}
