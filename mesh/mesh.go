@@ -3,6 +3,7 @@ package mesh
 import (
 	"slava0135/blockchan/blockgen"
 	"slava0135/blockchan/node"
+	"slava0135/blockchan/validate"
 )
 
 type ForkMesh struct {
@@ -12,6 +13,9 @@ type ForkMesh struct {
 func (m *ForkMesh) AllExistingBlocks() []blockgen.Block {
 	var longest []blockgen.Block
 	for fork := range m.receiveChannels {
+		if !validate.IsValidChain(fork.Blocks()) {
+			continue
+		}
 		if len(fork.Blocks()) > len(longest) {
 			longest = fork.Blocks() 
 		}
