@@ -50,9 +50,10 @@ func (n *Node) Start() {
 }
 
 func (n *Node) run() {
-	var cancel = make(chan struct{})
+	var cancel bool
 	var nextBlock = make(chan blockgen.Block)
-	go generateNextFrom(n.blocks[len(n.blocks)-1], nextBlock, cancel)
+	cancel = false
+	go generateNextFrom(n.blocks[len(n.blocks)-1], nextBlock, &cancel)
 	for {
 		select {
 		case <-n.shutdown:
@@ -73,7 +74,7 @@ func (n *Node) run() {
 			chain = append(chain, b)
 			if validate.IsValidChain(chain) {
 				n.blocks = append(n.blocks, b)
-				cancel <- struct{}{}
+				cancel = true
 			}
 		case b := <-nextBlock:
 			if !b.HasValidHash() {
@@ -86,12 +87,12 @@ func (n *Node) run() {
 				n.blocks = append(n.blocks, b)
 				n.Mesh.SendBlock(n, b)
 			}
-			go generateNextFrom(n.blocks[len(n.blocks)-1], nextBlock, cancel)
+			go generateNextFrom(n.blocks[len(n.blocks)-1], nextBlock, &cancel)
 		}
 	}
 }
 
-func generateNextFrom(block blockgen.Block, nextBlock chan blockgen.Block, cancel chan struct{}) {
+func generateNextFrom(block blockgen.Block, nextBlock chan blockgen.Block, cancel *bool) {
 	nextBlock <- blockgen.GenerateNextFrom(block, blockgen.Data{}, cancel)
 }
 
