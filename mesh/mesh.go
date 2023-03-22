@@ -12,6 +12,7 @@ type ForkMesh struct {
 
 func (m *ForkMesh) AllExistingBlocks(from int) []blockgen.Block {
 	var longest []blockgen.Block
+	var chains = make(map[node.Fork][]blockgen.Block)
 	for fork := range m.receiveChannels {
 		var chain = fork.Blocks(from)
 		if !validate.IsValidChain(chain) {
@@ -20,8 +21,35 @@ func (m *ForkMesh) AllExistingBlocks(from int) []blockgen.Block {
 		if len(chain) > len(longest) {
 			longest = chain
 		}
+		chains[fork] = chain
 	}
-	return longest
+	var count = 0
+	var dupForks = make(map[node.Fork]int)
+	for fork, chain := range chains {
+		if len(chain) == len(longest) {
+			count += 1
+			var processed = false
+			for otherFork := range dupForks {
+				if validate.AreSameChains(chain, chains[otherFork]) {
+					dupForks[otherFork] += 1
+					processed = true
+					break
+				}
+			}
+			if !processed {
+				dupForks[fork] = 1
+			}
+		}
+	}
+	var majorFork node.Fork
+	var majorNumber = 0
+	for fork, count := range dupForks {
+		if count > majorNumber {
+			majorFork = fork
+			majorNumber = count
+		}
+	}
+	return chains[majorFork]
 }
 
 func (m *ForkMesh) SendBlock(from node.Fork, b blockgen.Block) bool {

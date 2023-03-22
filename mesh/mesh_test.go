@@ -143,3 +143,27 @@ func TestForkMeshAllExistingBlocks_CheckIndex(t *testing.T) {
 		t.Fatalf("mesh accepted chain with different index")
 	} 
 }
+
+func TestForkMeshAllExistingBlocks_SameIndex(t *testing.T) {
+	var mesh = NewForkMesh()
+	var fork1 = newTestFork(mesh)
+	var fork2 = newTestFork(mesh)
+	var fork3 = newTestFork(mesh)
+	var chain = []blockgen.Block{blockgen.GenerateGenesisBlock()}
+	for i := 0; i < 3; i++ {
+		chain = append(chain, blockgen.GenerateNextFrom(chain[i], blockgen.Data{}, nil))
+	}
+	var nextMinor = blockgen.GenerateNextFrom(chain[len(chain)-1], blockgen.Data{1}, nil)
+	var chainMinor = []blockgen.Block(chain[:])
+	chainMinor = append(chainMinor, nextMinor)
+	fork1.blocks = chainMinor
+	var nextMajor = blockgen.GenerateNextFrom(chain[len(chain)-1], blockgen.Data{2}, nil)
+	var chainMajor = []blockgen.Block(chain[:])
+	chainMajor = append(chainMajor, nextMajor)
+	fork2.blocks = chainMajor 
+	fork3.blocks = fork2.blocks
+	var got = mesh.AllExistingBlocks(0)
+	if got[len(got)-1] != nextMajor {
+		t.Fatalf("mesh did not prefer major chain over minor")
+	}
+}
