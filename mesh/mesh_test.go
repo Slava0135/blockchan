@@ -48,7 +48,7 @@ func TestForkMeshSendBlock_Loopback(t *testing.T) {
 	}
 }
 
-func TestForkMesh_ThreeForks(t *testing.T) {
+func TestForkMeshSendBlock_ThreeForks(t *testing.T) {
 	var mesh = NewForkMesh()
 	var forkFrom = newTestFork(mesh)
 	var forkTo1 = newTestFork(mesh)
@@ -106,7 +106,7 @@ func TestForkMeshAllExistingBlocks_ThreeForks(t *testing.T) {
 	}
 }
 
-func TestForkMeshSendBlock_CantSendInvalidBlock(t *testing.T) {
+func TestForkMeshSendBlock_dontSendInvalidBlock(t *testing.T) {
 	var mesh = NewForkMesh()
 	var fork = newTestFork(mesh)
 	var block = blockgen.GenerateGenesisBlock()
