@@ -76,9 +76,6 @@ func (n *Node) run() {
 				cancel = true
 			}
 		case b := <-nextBlock:
-			if !b.HasValidHash() {
-				continue
-			}
 			var chain []blockgen.Block
 			chain = append(chain, n.blocks...)
 			chain = append(chain, b)
