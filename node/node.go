@@ -9,31 +9,31 @@ type Node struct {
 	Mesh      Mesh
 	Enabled   bool
 	blocks    []blockgen.Block
-	shutdown   chan struct{}
+	shutdown  chan struct{}
 	inProcess *bool
 }
 
 type Mesh interface {
-	AllExistingBlocks() []blockgen.Block
-	SendBlock(from Fork, b blockgen.Block)
+	AllExistingBlocks(from int) []blockgen.Block
+	SendBlock(from Fork, b blockgen.Block) bool
 	ReceiveChan(Fork) chan blockgen.Block
 	Connect(Fork)
 	Disconnect(Fork)
 }
 
 type Fork interface {
-	Blocks() []blockgen.Block
+	Blocks(from int) []blockgen.Block
 }
 
-func (n *Node) Blocks() []blockgen.Block {
-	return n.blocks
+func (n *Node) Blocks(from int) []blockgen.Block {
+	return n.blocks[from:]
 }
 
 func NewNode(mesh Mesh) *Node {
 	var node = &Node{}
 	node.Mesh = mesh
 	node.shutdown = make(chan struct{})
-	node.inProcess = new(bool) 
+	node.inProcess = new(bool)
 	return node
 }
 
@@ -41,7 +41,7 @@ func (n *Node) Enable() {
 	if n.Enabled {
 		panic("node was already enabled!")
 	}
-	n.blocks = n.Mesh.AllExistingBlocks()
+	n.blocks = n.Mesh.AllExistingBlocks(0)
 	if len(n.blocks) == 0 {
 		n.blocks = append(n.blocks, blockgen.GenerateGenesisBlock())
 		n.Mesh.SendBlock(n, n.blocks[0])
@@ -65,21 +65,20 @@ func (n *Node) ProcessNextBlock() {
 		case <-n.shutdown:
 			return
 		case b := <-n.Mesh.ReceiveChan(n):
-			if !b.HasValidHash() {
+			var lastThis = n.blocks[len(n.blocks)-1].Index
+			var lastOther = b.Index
+			if lastThis > lastOther {
 				continue
-			}
-			if len(n.blocks) > b.Index {
-				continue
-			}
-			if len(n.blocks) < b.Index {
-				n.blocks = n.Mesh.AllExistingBlocks()
-				return
 			}
 			var chain []blockgen.Block
 			chain = append(chain, n.blocks...)
-			chain = append(chain, b)
+			if lastThis+1 == lastOther {
+				chain = append(chain, b)
+			} else {
+				chain = append(chain, n.Mesh.AllExistingBlocks(lastThis+1)...)
+			}
 			if validate.IsValidChain(chain) {
-				n.blocks = append(n.blocks, b)
+				n.blocks = chain
 				return
 			}
 		case b := <-nextBlock:

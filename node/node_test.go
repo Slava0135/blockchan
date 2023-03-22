@@ -13,13 +13,14 @@ type testMesh struct {
 	connected           bool
 }
 
-func (mesh *testMesh) AllExistingBlocks() []blockgen.Block {
+func (mesh *testMesh) AllExistingBlocks(from int) []blockgen.Block {
 	mesh.timesAskedForBlocks += 1
-	return mesh.existingBlocks
+	return mesh.existingBlocks[from:]
 }
 
-func (mesh *testMesh) SendBlock(f Fork, b blockgen.Block) {
+func (mesh *testMesh) SendBlock(f Fork, b blockgen.Block) bool {
 	mesh.receivedBlocks = append(mesh.receivedBlocks, b)
+	return true
 }
 
 func (mesh *testMesh) ReceiveChan(f Fork) chan blockgen.Block {
@@ -62,11 +63,11 @@ func TestNodeStart_GetBlocks(t *testing.T) {
 	if mesh.timesAskedForBlocks == 0 {
 		t.Fatalf("node did not ask for blocks")
 	}
-	if len(node.Blocks()) < len(mesh.existingBlocks) {
-		t.Fatalf("node blocks amount = %d less than amount of start blocks = %d", len(node.Blocks()), len(mesh.existingBlocks))
+	if len(node.Blocks(0)) < len(mesh.existingBlocks) {
+		t.Fatalf("node blocks amount = %d less than amount of start blocks = %d", len(node.Blocks(0)), len(mesh.existingBlocks))
 	}
 	for i := range mesh.existingBlocks {
-		if node.Blocks()[i] != mesh.existingBlocks[i] {
+		if node.Blocks(0)[i] != mesh.existingBlocks[i] {
 			t.Fatalf("node block and start block did not match")
 		}
 	}
@@ -76,10 +77,10 @@ func TestNodeStart_Genesis(t *testing.T) {
 	var mesh = testMesh{}
 	var node = NewNode(&mesh)
 	node.Enable()
-	if len(node.Blocks()) == 0 {
+	if len(node.Blocks(0)) == 0 {
 		t.Fatalf("node did not generate genesis block")
 	}
-	if node.Blocks()[0].Index != 0 {
+	if node.Blocks(0)[0].Index != 0 {
 		t.Fatalf("genesis block index is wrong")
 	}
 }
@@ -124,14 +125,14 @@ func TestNodeRun_SendBlocks(t *testing.T) {
 	node.ProcessNextBlock()
 	node.ProcessNextBlock()
 	node.Disable()
-	if len(node.Blocks()) != len(mesh.receivedBlocks) {
-		t.Fatalf("node blocks amount = %d not equals amount of sent blocks = %d", len(node.Blocks()), len(mesh.receivedBlocks))
+	if len(node.Blocks(0)) != len(mesh.receivedBlocks) {
+		t.Fatalf("node blocks amount = %d not equals amount of sent blocks = %d", len(node.Blocks(0)), len(mesh.receivedBlocks))
 	}
-	if len(node.Blocks()) == 1 {
+	if len(node.Blocks(0)) == 1 {
 		t.Fatalf("node did not generate any blocks except genesis")
 	}
 	for i, v := range mesh.receivedBlocks {
-		if node.Blocks()[i] != v {
+		if node.Blocks(0)[i] != v {
 			t.Fatalf("node did not send correct block")
 		}
 	}
@@ -147,7 +148,7 @@ func TestNodeProcessNextBlock_AcceptReceivedBlock(t *testing.T) {
 	go node.ProcessNextBlock()
 	mesh.chanToNode <- next
 	node.Disable()
-	if node.Blocks()[next.Index].Data != data {
+	if node.Blocks(0)[next.Index].Data != data {
 		t.Fatalf("node did not accept valid received block")
 	}
 }
@@ -163,7 +164,7 @@ func TestNodeProcessNextBlock_RejectReceivedBlock(t *testing.T) {
 	go node.ProcessNextBlock()
 	mesh.chanToNode <- next
 	node.Disable()
-	if len(node.Blocks()) > next.Index && node.Blocks()[next.Index].Data == data {
+	if len(node.Blocks(0)) > next.Index && node.Blocks(0)[next.Index].Data == data {
 		t.Fatalf("node accepted invalid received block")
 	}
 }
@@ -183,28 +184,11 @@ func TestNodeProcessNextBlock_AcceptMissedBlock(t *testing.T) {
 	if mesh.timesAskedForBlocks < 2 {
 		t.Fatalf("node did not ask for blocks when it got block ahead")
 	}
-	if node.Blocks()[next.Index].Data != data {
+	if node.Blocks(0)[next.Index].Data != data {
 		t.Fatalf("node did not saved missing block")
 	}
-	if node.Blocks()[nextnext.Index].Data != data {
+	if node.Blocks(0)[nextnext.Index].Data != data {
 		t.Fatalf("node did not saved received block")
-	}
-}
-
-func TestNodeProcessNextBlock_RejectMissedBlock(t *testing.T) {
-	var mesh = newTestMesh()
-	var node = NewNode(&mesh)
-	var last = mesh.existingBlocks[len(mesh.existingBlocks)-1]
-	var next = blockgen.GenerateNextFrom(last, blockgen.Data{}, nil)
-	var nextnext = blockgen.GenerateNextFrom(next, blockgen.Data{}, nil)
-	nextnext.Hash.Reset()
-	node.Enable()
-	go node.ProcessNextBlock()
-	mesh.existingBlocks = append(mesh.existingBlocks, next, nextnext)
-	mesh.chanToNode <- nextnext
-	node.Disable()
-	if mesh.timesAskedForBlocks > 1 {
-		t.Fatalf("node asked for blocks when it got invalid block ahead")
 	}
 }
 
@@ -217,7 +201,7 @@ func TestNodeProcessNextBlock_IgnoreOldBlock(t *testing.T) {
 	go node.ProcessNextBlock()
 	mesh.chanToNode <- old
 	node.Disable()
-	if node.Blocks()[old.Index].Data == data {
+	if node.Blocks(0)[old.Index].Data == data {
 		t.Fatalf("node accepted received old block")
 	}
 }

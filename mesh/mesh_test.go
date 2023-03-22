@@ -10,8 +10,8 @@ type testFork struct {
 	blocks []blockgen.Block
 }
 
-func (f *testFork) Blocks() []blockgen.Block {
-	return f.blocks
+func (f *testFork) Blocks(from int) []blockgen.Block {
+	return f.blocks[from:]
 }
 
 func newTestFork(mesh node.Mesh) *testFork {
@@ -48,7 +48,7 @@ func TestForkMeshSendBlock_Loopback(t *testing.T) {
 	}
 }
 
-func TestForkMesh_ThreeForks(t *testing.T) {
+func TestForkMeshSendBlock_ThreeForks(t *testing.T) {
 	var mesh = NewForkMesh()
 	var forkFrom = newTestFork(mesh)
 	var forkTo1 = newTestFork(mesh)
@@ -84,24 +84,86 @@ func TestForkMeshAllExistingBlocks_ThreeForks(t *testing.T) {
 	for i := 0; i < 3; i++ {
 		chain = append(chain, blockgen.GenerateNextFrom(chain[i], blockgen.Data{}, nil))
 	}
-	if len(mesh.AllExistingBlocks()) != 0 {
+	if len(mesh.AllExistingBlocks(0)) != 0 {
 		t.Fatalf("mesh found non existant blocks")
 	}
 	fork1.blocks = chain[0:2]
-	var got = len(mesh.AllExistingBlocks())
-	var want = len(fork1.Blocks())
+	var got = len(mesh.AllExistingBlocks(0))
+	var want = len(fork1.Blocks(0))
 	if got != want {
 		t.Fatalf("got %d blocks; want %d blocks", got, want)
 	}
 	fork2.blocks = chain[0:4]
-	got = len(mesh.AllExistingBlocks())
-	want = len(fork2.Blocks())
+	got = len(mesh.AllExistingBlocks(0))
+	want = len(fork2.Blocks(0))
 	if got != want {
 		t.Fatalf("got %d blocks; want %d blocks", got, want)
 	}
 	fork3.blocks = chain[0:3]
-	got = len(mesh.AllExistingBlocks())
+	got = len(mesh.AllExistingBlocks(0))
 	if got != want {
 		t.Fatalf("got %d blocks; want %d blocks", got, want)
+	}
+}
+
+func TestForkMeshSendBlock_DontSendInvalidBlock(t *testing.T) {
+	var mesh = NewForkMesh()
+	var fork = newTestFork(mesh)
+	var block = blockgen.GenerateGenesisBlock()
+	block.Nonce += 1
+	if mesh.SendBlock(fork, block) {
+		t.Fatalf("sent invalid block")
+	}
+}
+
+func TestForkMeshAllExistingBlocks_IgnoreInvalidChains(t *testing.T) {
+	var mesh = NewForkMesh()
+	var fork = newTestFork(mesh)
+	var chain = []blockgen.Block{blockgen.GenerateGenesisBlock()}
+	for i := 0; i < 3; i++ {
+		chain = append(chain, blockgen.GenerateNextFrom(chain[i], blockgen.Data{}, nil))
+	}
+	chain[2].Nonce += 1
+	fork.blocks = chain
+	if len(mesh.AllExistingBlocks(0)) != 0 {
+		t.Fatalf("mesh accepted invalid chain")
+	}
+}
+
+func TestForkMeshAllExistingBlocks_CheckIndex(t *testing.T) {
+	var mesh = NewForkMesh()
+	var fork = newTestFork(mesh)
+	var chain = []blockgen.Block{blockgen.GenerateGenesisBlock()}
+	for i := 0; i < 3; i++ {
+		chain = append(chain, blockgen.GenerateNextFrom(chain[i], blockgen.Data{}, nil))
+	}
+	fork.blocks = chain
+	var from = 2
+	if mesh.AllExistingBlocks(from)[0].Index != from {
+		t.Fatalf("mesh accepted chain with different index")
+	} 
+}
+
+func TestForkMeshAllExistingBlocks_SameIndex(t *testing.T) {
+	var mesh = NewForkMesh()
+	var fork1 = newTestFork(mesh)
+	var fork2 = newTestFork(mesh)
+	var fork3 = newTestFork(mesh)
+	var chain = []blockgen.Block{blockgen.GenerateGenesisBlock()}
+	for i := 0; i < 3; i++ {
+		chain = append(chain, blockgen.GenerateNextFrom(chain[i], blockgen.Data{}, nil))
+	}
+	var nextMinor = blockgen.GenerateNextFrom(chain[len(chain)-1], blockgen.Data{1}, nil)
+	var chainMinor = []blockgen.Block(chain[:])
+	chainMinor = append(chainMinor, nextMinor)
+	fork1.blocks = chainMinor
+	var nextMajor = blockgen.GenerateNextFrom(chain[len(chain)-1], blockgen.Data{2}, nil)
+	var chainMajor = []blockgen.Block(chain[:])
+	chainMajor = append(chainMajor, nextMajor)
+	fork2.blocks = chainMajor 
+	fork3.blocks = fork2.blocks
+	var got = mesh.AllExistingBlocks(0)
+	if got[len(got)-1] != nextMajor {
+		t.Fatalf("mesh did not prefer major chain over minor")
 	}
 }
