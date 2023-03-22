@@ -22,31 +22,36 @@ func (b Block) HasValidHash() bool {
 	return string(b.Hash.Sum(nil)) == string(hash.Sum(nil)) && hasValidEnding(hash)
 }
 
-func GenerateNextFrom(prev Block, data Data) Block {
+func GenerateNextFrom(prev Block, data Data, cancel chan struct{}) Block {
 	var next = Block{}
 	next.Index = prev.Index + 1
 	next.PrevHash = prev.Hash
 	next.Data = data
 	next.Nonce = Nonce(0)
-	next.GenerateValidHash()
+	next.GenerateValidHash(cancel)
 	return next
 }
 
 func GenerateGenesisBlock() Block {
 	var b = Block{}
 	b.PrevHash = sha256.New()
-	b.GenerateValidHash()
+	b.GenerateValidHash(nil)
 	return b
 }
 
-func (b *Block) GenerateValidHash() {
+func (b *Block) GenerateValidHash(cancel chan struct{}) {
 	for {
-		var hash = calculateHashFrom(*b)
-		if hasValidEnding(hash) {
-			b.Hash = hash
+		select {
+		case <- cancel:
 			return
+		default:
+			var hash = calculateHashFrom(*b)
+			if hasValidEnding(hash) {
+				b.Hash = hash
+				return
+			}
+			b.Nonce += 1
 		}
-		b.Nonce += 1
 	}
 }
 

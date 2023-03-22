@@ -61,7 +61,7 @@ func (n *Node) Run() {
 				n.Blocks = chain
 			}
 		default:
-			var next = blockgen.GenerateNextFrom(n.Blocks[len(n.Blocks)-1], blockgen.Data{})
+			var next = blockgen.GenerateNextFrom(n.Blocks[len(n.Blocks)-1], blockgen.Data{}, nil)
 			n.Blocks = append(n.Blocks, next)
 			n.Link.SendBlock(next)
 		}

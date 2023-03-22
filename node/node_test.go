@@ -30,7 +30,7 @@ func newTestLink() testLink {
 	var link = testLink{}
 	link.existingBlocks = append(link.existingBlocks, blockgen.GenerateGenesisBlock())
 	for i := byte(0); i < 10; i += 1 {
-		var newBlock = blockgen.GenerateNextFrom(link.existingBlocks[i], blockgen.Data{i})
+		var newBlock = blockgen.GenerateNextFrom(link.existingBlocks[i], blockgen.Data{i}, nil)
 		link.existingBlocks = append(link.existingBlocks, newBlock)
 	}
 	link.chanToNode = make(chan blockgen.Block)
@@ -130,7 +130,7 @@ func TestNodeRun_AcceptReceivedBlock(t *testing.T) {
 	var node = NewNode(&link)
 	var data = testData()
 	var last = link.existingBlocks[len(link.existingBlocks)-1]
-	var next = blockgen.GenerateNextFrom(last, data)
+	var next = blockgen.GenerateNextFrom(last, data, nil)
 	node.Start()
 	link.chanToNode <- next
 	node.Shutdown()
@@ -144,7 +144,7 @@ func TestNodeRun_RejectReceivedBlock(t *testing.T) {
 	var node = NewNode(&link)
 	var data = testData()
 	var last = link.existingBlocks[len(link.existingBlocks)-1]
-	var next = blockgen.GenerateNextFrom(last, data)
+	var next = blockgen.GenerateNextFrom(last, data, nil)
 	next.Hash.Reset()
 	node.Start()
 	link.chanToNode <- next
@@ -159,8 +159,8 @@ func TestNodeRun_AcceptMissedBlock(t *testing.T) {
 	var node = NewNode(&link)
 	var data = testData()
 	var last = link.existingBlocks[len(link.existingBlocks)-1]
-	var next = blockgen.GenerateNextFrom(last, data)
-	var nextnext = blockgen.GenerateNextFrom(next, data)
+	var next = blockgen.GenerateNextFrom(last, data, nil)
+	var nextnext = blockgen.GenerateNextFrom(next, data, nil)
 	node.Start()
 	link.existingBlocks = append(link.existingBlocks, next, nextnext)
 	link.chanToNode <- nextnext
@@ -180,8 +180,8 @@ func TestNodeRun_RejectMissedBlock(t *testing.T) {
 	var link = newTestLink()
 	var node = NewNode(&link)
 	var last = link.existingBlocks[len(link.existingBlocks)-1]
-	var next = blockgen.GenerateNextFrom(last, blockgen.Data{})
-	var nextnext = blockgen.GenerateNextFrom(next, blockgen.Data{})
+	var next = blockgen.GenerateNextFrom(last, blockgen.Data{}, nil)
+	var nextnext = blockgen.GenerateNextFrom(next, blockgen.Data{}, nil)
 	nextnext.Hash.Reset()
 	node.Start()
 	link.existingBlocks = append(link.existingBlocks, next, nextnext)
@@ -196,7 +196,7 @@ func TestNodeRun_IgnoreOldBlock(t *testing.T) {
 	var link = newTestLink()
 	var node = NewNode(&link)
 	var data = testData()
-	var old = blockgen.GenerateNextFrom(link.existingBlocks[0], data)
+	var old = blockgen.GenerateNextFrom(link.existingBlocks[0], data, nil)
 	node.Start()
 	link.chanToNode <- old
 	node.Shutdown()
