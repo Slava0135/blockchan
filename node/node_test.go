@@ -29,8 +29,8 @@ func (link *testLink) ReceiveChan() chan blockgen.Block {
 func newTestLink() testLink {
 	var link = testLink{}
 	link.existingBlocks = append(link.existingBlocks, blockgen.GenerateGenesisBlock())
-	for i := byte(0); i < 10; i += 1 {
-		var newBlock = blockgen.GenerateNextFrom(link.existingBlocks[i], blockgen.Data{i})
+	for i := byte(0); i < 3; i += 1 {
+		var newBlock = blockgen.GenerateNextFrom(link.existingBlocks[i], blockgen.Data{i}, nil)
 		link.existingBlocks = append(link.existingBlocks, newBlock)
 	}
 	link.chanToNode = make(chan blockgen.Block)
@@ -130,8 +130,9 @@ func TestNodeRun_AcceptReceivedBlock(t *testing.T) {
 	var node = NewNode(&link)
 	var data = testData()
 	var last = link.existingBlocks[len(link.existingBlocks)-1]
-	var next = blockgen.GenerateNextFrom(last, data)
+	var next = blockgen.GenerateNextFrom(last, data, nil)
 	node.Start()
+	time.Sleep(time.Millisecond) // wait until node start generate next block
 	link.chanToNode <- next
 	node.Shutdown()
 	if node.Blocks[next.Index].Data != data {
@@ -144,12 +145,12 @@ func TestNodeRun_RejectReceivedBlock(t *testing.T) {
 	var node = NewNode(&link)
 	var data = testData()
 	var last = link.existingBlocks[len(link.existingBlocks)-1]
-	var next = blockgen.GenerateNextFrom(last, data)
+	var next = blockgen.GenerateNextFrom(last, data, nil)
 	next.Hash.Reset()
 	node.Start()
 	link.chanToNode <- next
 	node.Shutdown()
-	if len(node.Blocks) >= next.Index && node.Blocks[next.Index].Data == data {
+	if len(node.Blocks) > next.Index && node.Blocks[next.Index].Data == data {
 		t.Fatalf("node accepted invalid received block")
 	}
 }
@@ -159,9 +160,10 @@ func TestNodeRun_AcceptMissedBlock(t *testing.T) {
 	var node = NewNode(&link)
 	var data = testData()
 	var last = link.existingBlocks[len(link.existingBlocks)-1]
-	var next = blockgen.GenerateNextFrom(last, data)
-	var nextnext = blockgen.GenerateNextFrom(next, data)
+	var next = blockgen.GenerateNextFrom(last, data, nil)
+	var nextnext = blockgen.GenerateNextFrom(next, data, nil)
 	node.Start()
+	time.Sleep(time.Millisecond)
 	link.existingBlocks = append(link.existingBlocks, next, nextnext)
 	link.chanToNode <- nextnext
 	node.Shutdown()
@@ -180,8 +182,8 @@ func TestNodeRun_RejectMissedBlock(t *testing.T) {
 	var link = newTestLink()
 	var node = NewNode(&link)
 	var last = link.existingBlocks[len(link.existingBlocks)-1]
-	var next = blockgen.GenerateNextFrom(last, blockgen.Data{})
-	var nextnext = blockgen.GenerateNextFrom(next, blockgen.Data{})
+	var next = blockgen.GenerateNextFrom(last, blockgen.Data{}, nil)
+	var nextnext = blockgen.GenerateNextFrom(next, blockgen.Data{}, nil)
 	nextnext.Hash.Reset()
 	node.Start()
 	link.existingBlocks = append(link.existingBlocks, next, nextnext)
@@ -196,7 +198,7 @@ func TestNodeRun_IgnoreOldBlock(t *testing.T) {
 	var link = newTestLink()
 	var node = NewNode(&link)
 	var data = testData()
-	var old = blockgen.GenerateNextFrom(link.existingBlocks[0], data)
+	var old = blockgen.GenerateNextFrom(link.existingBlocks[0], data, nil)
 	node.Start()
 	link.chanToNode <- old
 	node.Shutdown()

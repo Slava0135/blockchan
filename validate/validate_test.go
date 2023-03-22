@@ -23,7 +23,7 @@ func TestIsValidChain_ValidChain(t *testing.T) {
 	var gen = blockgen.GenerateGenesisBlock()
 	var chain = []blockgen.Block{gen}
 	for i := byte(0); i < 10; i += 1 {
-		chain = append(chain, blockgen.GenerateNextFrom(chain[i], blockgen.Data{}))
+		chain = append(chain, blockgen.GenerateNextFrom(chain[i], blockgen.Data{}, nil))
 	}
 	if !IsValidChain(chain) {
 		t.Fatalf("valid chain is invalid")
@@ -32,9 +32,9 @@ func TestIsValidChain_ValidChain(t *testing.T) {
 
 func TestIsValidChain_PrevHashNotMatching(t *testing.T) {
 	var one = blockgen.GenerateGenesisBlock()
-	var two = blockgen.GenerateNextFrom(one, blockgen.Data{})
+	var two = blockgen.GenerateNextFrom(one, blockgen.Data{}, nil)
 	one.Data[0] += 1
-	one.GenerateValidHash()
+	one.GenerateValidHash(nil)
 	if IsValidChain([]blockgen.Block{one, two}) {
 		t.Fatalf("block with invalid prev hash is valid")
 	}
@@ -44,11 +44,11 @@ func TestIsValidChain_WrongIndex(t *testing.T) {
 	var gen = blockgen.GenerateGenesisBlock()
 	var chain = []blockgen.Block{gen}
 	for i := byte(0); i < 10; i += 1 {
-		chain = append(chain, blockgen.GenerateNextFrom(chain[i], blockgen.Data{}))
+		chain = append(chain, blockgen.GenerateNextFrom(chain[i], blockgen.Data{}, nil))
 		const mut = 3
 		if i == mut-1 {
 			chain[mut].Index += 42
-			chain[mut].GenerateValidHash()
+			chain[mut].GenerateValidHash(nil)
 		}
 	}
 	if IsValidChain(chain) {
