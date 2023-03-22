@@ -8,7 +8,7 @@ import (
 )
 
 func TestNodeMesh_Interface(t *testing.T) {
-	var _ node.Mesh = &NodeMesh{}
+	var _ node.Mesh = &ForkMesh{}
 }
 
 func TestNodeMesh_SendAndReceive(t *testing.T) {
@@ -73,7 +73,7 @@ func TestNodeMeshAllExistingBlocks(t *testing.T) {
 	node.Start()
 	time.Sleep(time.Second)
 	node.Shutdown()
-	if len(mesh.AllExistingBlocks()) != len(node.Blocks) {
+	if len(mesh.AllExistingBlocks()) != len(node.Blocks()) {
 		t.Fatalf("mesh did not get existing blocks")
 	}
 }
