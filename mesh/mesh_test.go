@@ -119,9 +119,12 @@ func TestForkMeshSendBlock_DontSendInvalidBlock(t *testing.T) {
 func TestForkMeshAllExistingBlocks_IgnoreInvalidChains(t *testing.T) {
 	var mesh = NewForkMesh()
 	var fork = newTestFork(mesh)
-	var block = blockgen.GenerateGenesisBlock()
-	block.Nonce += 1
-	fork.blocks = []blockgen.Block{block}
+	var chain = []blockgen.Block{blockgen.GenerateGenesisBlock()}
+	for i := 0; i < 3; i++ {
+		chain = append(chain, blockgen.GenerateNextFrom(chain[i], blockgen.Data{}, nil))
+	}
+	chain[2].Nonce += 1
+	fork.blocks = chain
 	if len(mesh.AllExistingBlocks(0)) != 0 {
 		t.Fatalf("mesh accepted invalid chain")
 	}
