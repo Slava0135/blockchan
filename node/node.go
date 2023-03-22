@@ -7,9 +7,10 @@ import (
 
 type Node struct {
 	Mesh      Mesh
-	IsRunning bool
+	Enabled   bool
 	blocks    []blockgen.Block
-	shutdown  chan struct{}
+	shutdown   chan struct{}
+	inProcess *bool
 }
 
 type Mesh interface {
@@ -32,27 +33,30 @@ func NewNode(mesh Mesh) *Node {
 	var node = &Node{}
 	node.Mesh = mesh
 	node.shutdown = make(chan struct{})
+	node.inProcess = new(bool) 
 	return node
 }
 
-func (n *Node) Start() {
-	if n.IsRunning {
-		panic("node was already running!")
+func (n *Node) Enable() {
+	if n.Enabled {
+		panic("node was already enabled!")
 	}
 	n.blocks = n.Mesh.AllExistingBlocks()
 	if len(n.blocks) == 0 {
 		n.blocks = append(n.blocks, blockgen.GenerateGenesisBlock())
 		n.Mesh.SendBlock(n, n.blocks[0])
 	}
-	n.IsRunning = true
+	n.Enabled = true
 	n.Mesh.Connect(n)
-	go n.run()
 }
 
-func (n *Node) run() {
-	var cancel bool
-	var nextBlock = make(chan blockgen.Block)
-	go generateNextFrom(n.blocks[len(n.blocks)-1], nextBlock, &cancel)
+func (n *Node) ProcessNextBlock() {
+	if *n.inProcess {
+		panic("node was already processing next block!")
+	}
+	defer func() { *n.inProcess = false }()
+	var nextBlock = make(chan blockgen.Block, 1)
+	go generateNextFrom(n.blocks[len(n.blocks)-1], nextBlock, n.inProcess)
 	for {
 		select {
 		case <-n.shutdown:
@@ -61,43 +65,40 @@ func (n *Node) run() {
 			if !b.HasValidHash() {
 				continue
 			}
-			if len(n.blocks) < b.Index {
-				n.blocks = n.Mesh.AllExistingBlocks()
-				continue
-			}
 			if len(n.blocks) > b.Index {
 				continue
 			}
+			if len(n.blocks) < b.Index {
+				n.blocks = n.Mesh.AllExistingBlocks()
+				return
+			}
 			var chain []blockgen.Block
 			chain = append(chain, n.blocks...)
 			chain = append(chain, b)
 			if validate.IsValidChain(chain) {
 				n.blocks = append(n.blocks, b)
-				cancel = true
+				return
 			}
 		case b := <-nextBlock:
-			var chain []blockgen.Block
-			chain = append(chain, n.blocks...)
-			chain = append(chain, b)
-			if validate.IsValidChain(chain) {
-				n.blocks = append(n.blocks, b)
-				n.Mesh.SendBlock(n, b)
-			}
-			cancel = false
-			go generateNextFrom(n.blocks[len(n.blocks)-1], nextBlock, &cancel)
+			n.blocks = append(n.blocks, b)
+			n.Mesh.SendBlock(n, b)
+			return
 		}
 	}
 }
 
 func generateNextFrom(block blockgen.Block, nextBlock chan blockgen.Block, cancel *bool) {
-	nextBlock <- blockgen.GenerateNextFrom(block, blockgen.Data{}, cancel)
+	var b = blockgen.GenerateNextFrom(block, blockgen.Data{}, cancel)
+	nextBlock <- b
 }
 
-func (n *Node) Shutdown() {
-	if !n.IsRunning {
-		panic("node was not running!")
+func (n *Node) Disable() {
+	if !n.Enabled {
+		panic("node was not enabled!")
 	}
 	n.Mesh.Disconnect(n)
-	n.shutdown <- struct{}{}
-	n.IsRunning = false
+	if *n.inProcess {
+		n.shutdown <- struct{}{}
+	}
+	n.Enabled = false
 }
