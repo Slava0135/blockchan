@@ -18,6 +18,9 @@ type Data [256]byte
 type Nonce int
 
 func (b Block) HasValidHash() bool {
+	if b.Hash == nil {
+		return false
+	}
 	var hash = calculateHashFrom(b)
 	return string(b.Hash.Sum(nil)) == string(hash.Sum(nil)) && hasValidEnding(hash)
 }
