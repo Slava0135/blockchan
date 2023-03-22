@@ -52,7 +52,6 @@ func (n *Node) Start() {
 func (n *Node) run() {
 	var cancel bool
 	var nextBlock = make(chan blockgen.Block)
-	cancel = false
 	go generateNextFrom(n.blocks[len(n.blocks)-1], nextBlock, &cancel)
 	for {
 		select {
@@ -87,6 +86,7 @@ func (n *Node) run() {
 				n.blocks = append(n.blocks, b)
 				n.Mesh.SendBlock(n, b)
 			}
+			cancel = false
 			go generateNextFrom(n.blocks[len(n.blocks)-1], nextBlock, &cancel)
 		}
 	}
