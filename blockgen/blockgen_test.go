@@ -124,7 +124,7 @@ func TestGenerateNextFrom_Cancel(t *testing.T) {
 func TestBlockMarshal(t *testing.T) {
 	var prev = GenerateGenesisBlock()
 	var next = GenerateNextFrom(prev, Data{1, 2, 3, 4, 5}, nil)
-	var i any = next
+	var i any = &next
 	marshaler, ok := i.(encoding.BinaryMarshaler)
 	if !ok {
 		t.Fatalf("block does not implement encoding.BinaryMarshaler")
@@ -134,7 +134,7 @@ func TestBlockMarshal(t *testing.T) {
 		t.Fatalf("failed to marshal valid block")
 	}
 	var restored = Block{}
-	i = restored
+	i = &restored
 	unmarshaler, ok := i.(encoding.BinaryUnmarshaler)
 	if !ok {
 		t.Fatalf("block does not implement encoding.BinaryUnmarshaler")
@@ -142,5 +142,14 @@ func TestBlockMarshal(t *testing.T) {
 	unmarshaler.UnmarshalBinary(data)
 	if !AreSameBlocks(next, restored) {
 		t.Fatalf("original block and restored blocks are different")
+	}
+}
+
+func TestAreSameBlocks_Index(t *testing.T) {
+	var a = GenerateGenesisBlock()
+	var b = GenerateGenesisBlock()
+	b.Index += 1
+	if AreSameBlocks(a, b) {
+		t.Fatalf("blocks with different index are same")
 	}
 }

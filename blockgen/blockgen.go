@@ -2,6 +2,7 @@ package blockgen
 
 import (
 	"crypto/sha256"
+	"encoding/binary"
 	"hash"
 	"strconv"
 )
@@ -68,14 +69,25 @@ func hasValidEnding(h hash.Hash) bool {
 	return sum[len(sum)-1] == 0 && sum[len(sum)-2] == 0
 }
 
-func (b Block) MarshalBinary() (data []byte, err error) {
-	return nil, nil
+func (b *Block) MarshalBinary() (data []byte, err error) {
+	data = binary.BigEndian.AppendUint64(data, uint64(b.Index))
+	return
 }
 
-func (b Block) UnmarshalBinary(data []byte) error {
+func (b *Block) UnmarshalBinary(data []byte) error {
+	var _, val = consumeUint64(data)
+	b.Index = Index(val)
 	return nil
 }
 
+func consumeUint64(b []byte) ([]byte, uint64) {
+	_ = b[7]
+	x := uint64(b[7]) | uint64(b[6])<<8 | uint64(b[5])<<16 | uint64(b[4])<<24 |
+		uint64(b[3])<<32 | uint64(b[2])<<40 | uint64(b[1])<<48 | uint64(b[0])<<56
+	return b[8:], x
+}
+
+
 func AreSameBlocks(a, b Block) bool {
-	return true
+	return a.Index == b.Index
 }
