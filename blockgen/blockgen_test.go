@@ -1,6 +1,7 @@
 package blockgen
 
 import (
+	"encoding"
 	"fmt"
 	"testing"
 )
@@ -110,7 +111,7 @@ func TestHasValidHash_Nil(t *testing.T) {
 func TestGenerateNextFrom_Cancel(t *testing.T) {
 	var prev = GenerateGenesisBlock()
 	var cancel = false
-	var next Block 
+	var next Block
 	go func() {
 		next = GenerateNextFrom(prev, Data{}, &cancel)
 	}()
@@ -118,4 +119,25 @@ func TestGenerateNextFrom_Cancel(t *testing.T) {
 	if next.HasValidHash() {
 		t.Fatalf("block generation was not cancelled")
 	}
+}
+
+func TestBlockMarshal(t *testing.T) {
+	var prev = GenerateGenesisBlock()
+	var next = GenerateNextFrom(prev, Data{1, 2, 3, 4, 5}, nil)
+	var i any = next
+	marshaler, ok := i.(encoding.BinaryMarshaler)
+	if !ok {
+		t.Fatalf("block does not implement encoding.BinaryMarshaler")
+	}
+	data, err := marshaler.MarshalBinary()
+	if err != nil {
+		t.Fatalf("failed to marshal valid block")
+	}
+	var restored = Block{}
+	i = restored
+	unmarshaler, ok := i.(encoding.BinaryUnmarshaler)
+	if !ok {
+		t.Fatalf("block does not implement encoding.BinaryUnmarshaler")
+	}
+	unmarshaler.UnmarshalBinary(data)
 }

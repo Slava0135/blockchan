@@ -66,3 +66,11 @@ func hasValidEnding(h hash.Hash) bool {
 	var sum = h.Sum(nil)
 	return sum[len(sum)-1] == 0 && sum[len(sum)-2] == 0
 }
+
+func (b Block) MarshalBinary() (data []byte, err error) {
+	return nil, nil
+}
+
+func (b Block) UnmarshalBinary(data []byte) error {
+	return nil
+}
