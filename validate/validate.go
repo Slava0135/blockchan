@@ -1,6 +1,7 @@
 package validate
 
 import (
+	"bytes"
 	"slava0135/blockchan/blockgen"
 )
 
@@ -26,7 +27,7 @@ func AreSameChains(a, b []blockgen.Block) bool {
 		return false
 	}
 	for i := range a {
-		if string(a[i].Hash.Sum(nil)) != string(b[i].Hash.Sum(nil)) {
+		if !bytes.Equal(a[i].Hash.Sum(nil), b[i].Hash.Sum(nil)) {
 			return false
 		}
 	}

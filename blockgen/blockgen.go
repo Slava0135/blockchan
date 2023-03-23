@@ -1,6 +1,7 @@
 package blockgen
 
 import (
+	"bytes"
 	"crypto/sha256"
 	"encoding/binary"
 	"hash"
@@ -24,7 +25,7 @@ func (b Block) HasValidHash() bool {
 		return false
 	}
 	var hash = calculateHashFrom(b)
-	return string(b.Hash.Sum(nil)) == string(hash.Sum(nil)) && hasValidEnding(hash)
+	return bytes.Equal(b.Hash.Sum(nil), hash.Sum(nil)) && hasValidEnding(hash)
 }
 
 func GenerateNextFrom(prev Block, data Data, cancel *bool) Block {
@@ -65,8 +66,7 @@ func calculateHashFrom(b Block) hash.Hash {
 }
 
 func hasValidEnding(h hash.Hash) bool {
-	var sum = h.Sum(nil)
-	return sum[len(sum)-1] == 0 && sum[len(sum)-2] == 0
+	return bytes.HasSuffix(h.Sum(nil), []byte{0, 0})
 }
 
 func (b *Block) MarshalBinary() (data []byte, err error) {
@@ -86,7 +86,6 @@ func consumeUint64(b []byte) ([]byte, uint64) {
 		uint64(b[3])<<32 | uint64(b[2])<<40 | uint64(b[1])<<48 | uint64(b[0])<<56
 	return b[8:], x
 }
-
 
 func AreSameBlocks(a, b Block) bool {
 	return a.Index == b.Index
