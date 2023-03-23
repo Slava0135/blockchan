@@ -14,7 +14,7 @@ type Node struct {
 }
 
 type Mesh interface {
-	AllExistingBlocks(from int) []blockgen.Block
+	AllExistingBlocks(from blockgen.Index) []blockgen.Block
 	SendBlock(from Fork, b blockgen.Block) bool
 	ReceiveChan(Fork) chan blockgen.Block
 	Connect(Fork)
@@ -22,10 +22,10 @@ type Mesh interface {
 }
 
 type Fork interface {
-	Blocks(from int) []blockgen.Block
+	Blocks(from blockgen.Index) []blockgen.Block
 }
 
-func (n *Node) Blocks(from int) []blockgen.Block {
+func (n *Node) Blocks(from blockgen.Index) []blockgen.Block {
 	return n.blocks[from:]
 }
 

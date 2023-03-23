@@ -13,7 +13,7 @@ type testMesh struct {
 	connected           bool
 }
 
-func (mesh *testMesh) AllExistingBlocks(from int) []blockgen.Block {
+func (mesh *testMesh) AllExistingBlocks(from blockgen.Index) []blockgen.Block {
 	mesh.timesAskedForBlocks += 1
 	return mesh.existingBlocks[from:]
 }
@@ -164,7 +164,7 @@ func TestNodeProcessNextBlock_RejectReceivedBlock(t *testing.T) {
 	go node.ProcessNextBlock()
 	mesh.chanToNode <- next
 	node.Disable()
-	if len(node.Blocks(0)) > next.Index && node.Blocks(0)[next.Index].Data == data {
+	if blockgen.Index(len(node.Blocks(0))) > next.Index && node.Blocks(0)[next.Index].Data == data {
 		t.Fatalf("node accepted invalid received block")
 	}
 }

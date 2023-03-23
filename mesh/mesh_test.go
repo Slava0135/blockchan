@@ -10,7 +10,7 @@ type testFork struct {
 	blocks []blockgen.Block
 }
 
-func (f *testFork) Blocks(from int) []blockgen.Block {
+func (f *testFork) Blocks(from blockgen.Index) []blockgen.Block {
 	return f.blocks[from:]
 }
 
@@ -138,7 +138,7 @@ func TestForkMeshAllExistingBlocks_CheckIndex(t *testing.T) {
 		chain = append(chain, blockgen.GenerateNextFrom(chain[i], blockgen.Data{}, nil))
 	}
 	fork.blocks = chain
-	var from = 2
+	var from = blockgen.Index(2)
 	if mesh.AllExistingBlocks(from)[0].Index != from {
 		t.Fatalf("mesh accepted chain with different index")
 	} 

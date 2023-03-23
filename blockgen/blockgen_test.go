@@ -85,7 +85,7 @@ func TestGenerateNextFrom_HashUseData(t *testing.T) {
 
 func TestGenerateGenesisBlock(t *testing.T) {
 	var b = GenerateGenesisBlock()
-	var want = 0
+	var want = Index(0)
 	if b.Index != want {
 		t.Fatalf("index = %d; want %d", b.Index, want)
 	}
