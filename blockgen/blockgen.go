@@ -16,7 +16,7 @@ type Block struct {
 
 type Index uint64
 type Data [256]byte
-type Nonce int
+type Nonce uint64
 
 func (b Block) HasValidHash() bool {
 	if b.Hash == nil {
@@ -56,8 +56,8 @@ func (b *Block) GenerateValidHash(cancel *bool) {
 
 func calculateHashFrom(b Block) hash.Hash {
 	var hash = sha256.New()
-	hash.Write([]byte(strconv.Itoa(int(b.Nonce))))
-	hash.Write([]byte(strconv.Itoa(int(b.Index))))
+	hash.Write([]byte(strconv.FormatUint(uint64(b.Nonce), 10)))
+	hash.Write([]byte(strconv.FormatUint(uint64(b.Index), 10)))
 	hash.Write(b.PrevHash.Sum(nil))
 	hash.Write(b.Data[:])
 	return hash
