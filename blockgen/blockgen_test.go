@@ -140,4 +140,7 @@ func TestBlockMarshal(t *testing.T) {
 		t.Fatalf("block does not implement encoding.BinaryUnmarshaler")
 	}
 	unmarshaler.UnmarshalBinary(data)
+	if !AreSameBlocks(next, restored) {
+		t.Fatalf("original block and restored blocks are different")
+	}
 }

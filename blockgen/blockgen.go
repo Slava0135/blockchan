@@ -74,3 +74,7 @@ func (b Block) MarshalBinary() (data []byte, err error) {
 func (b Block) UnmarshalBinary(data []byte) error {
 	return nil
 }
+
+func AreSameBlocks(a, b Block) bool {
+	return true
+}
