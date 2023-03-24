@@ -69,23 +69,10 @@ func hasValidEnding(h HashSum) bool {
 }
 
 func (a Block) Equal(b Block) bool {
-	if a.Index != b.Index {
-		return false
-	}
-	if !bytes.Equal(a.PrevHash, b.PrevHash) {
-		return false
-	}
-	if !bytes.Equal(a.Hash, b.Hash) {
-		return false
-	}
-	if !bytes.Equal(a.Hash, b.Hash) {
-		return false
-	}
-	if !bytes.Equal(a.Data[:], b.Data[:]) {
-		return false
-	}
-	if a.Nonce != b.Nonce {
-		return false
-	}
-	return true
+	return a.Index == b.Index &&
+		bytes.Equal(a.PrevHash, b.PrevHash) &&
+		bytes.Equal(a.Hash, b.Hash) &&
+		bytes.Equal(a.Hash, b.Hash) &&
+		bytes.Equal(a.Data[:], b.Data[:]) &&
+		a.Nonce == b.Nonce
 }
