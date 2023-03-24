@@ -37,3 +37,17 @@ func TestUnpackMessage_InvalidMsg(t *testing.T) {
 		t.Fatalf("accepted invalid message")
 	}
 }
+
+func TestPackMessage_InvalidInput(t *testing.T) {
+	var packed = PackMessage("marko zajc")
+	if packed != nil {
+		t.Fatalf("accepted invalid input")
+	}
+}
+
+func TestUnpackMessage_InvalidInput(t *testing.T) {
+	var unpacked = UnpackMessage([]byte("marko\nzajc"))
+	if unpacked != nil {
+		t.Fatalf("accepted invalid input")
+	}
+}
