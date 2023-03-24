@@ -50,7 +50,7 @@ func (n *Node) Enable() {
 	n.Mesh.Connect(n)
 }
 
-func (n *Node) ProcessNextBlock() {
+func (n *Node) ProcessNextBlock(data blockgen.Data) {
 	if *n.inProcess {
 		panic("node was already processing next block!")
 	}
@@ -59,7 +59,7 @@ func (n *Node) ProcessNextBlock() {
 	var cancel = false
 	defer func() { cancel = true }()
 	var nextBlock = make(chan blockgen.Block, 1)
-	go generateNextFrom(n.blocks[len(n.blocks)-1], nextBlock, &cancel)
+	go generateNextFrom(n.blocks[len(n.blocks)-1], data, nextBlock, &cancel)
 	for {
 		select {
 		case <-n.shutdown:
@@ -89,8 +89,8 @@ func (n *Node) ProcessNextBlock() {
 	}
 }
 
-func generateNextFrom(block blockgen.Block, nextBlock chan blockgen.Block, cancel *bool) {
-	var b = blockgen.GenerateNextFrom(block, blockgen.Data{}, cancel)
+func generateNextFrom(block blockgen.Block, data blockgen.Data, nextBlock chan blockgen.Block, cancel *bool) {
+	var b = blockgen.GenerateNextFrom(block, data, cancel)
 	nextBlock <- b
 }
 
