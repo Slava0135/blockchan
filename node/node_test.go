@@ -35,6 +35,10 @@ func (mesh *testMesh) Disconnect(f Fork) {
 	mesh.connected = false
 }
 
+func (mesh *testMesh) MentorFork() Fork {
+	return nil
+}
+
 func newTestMesh() testMesh {
 	var mesh = testMesh{}
 	mesh.existingBlocks = append(mesh.existingBlocks, blockgen.GenerateGenesisBlock())

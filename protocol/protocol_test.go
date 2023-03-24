@@ -6,6 +6,7 @@ import (
 	"slava0135/blockchan/messages"
 	"slava0135/blockchan/validate"
 	"testing"
+	"time"
 )
 
 type testLink struct {
@@ -33,7 +34,9 @@ func TestSendBlock(t *testing.T) {
 	var mesh = mesh.NewForkMesh()
 	var remote = NewRemoteFork(mesh, link)
 	var block = blockgen.GenerateNextFrom(blockgen.GenerateGenesisBlock(), blockgen.Data{1, 2, 3}, nil)
-	remote.SendBlock(block)
+	go remote.Listen(nil)
+	time.Sleep(time.Second)
+	go mesh.SendBlock(nil, block)
 	var unpacked = messages.UnpackMessage(<-link.sendChan)
 	var received, ok = unpacked.(messages.SendBlockMsg)
 	if !ok {
