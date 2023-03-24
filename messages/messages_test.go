@@ -1,4 +1,4 @@
-package protocol
+package messages
 
 import (
 	"slava0135/blockchan/blockgen"
@@ -32,7 +32,7 @@ func TestPackMessage_AskForBlocks(t *testing.T) {
 }
 
 func TestUnpackMessage_InvalidMsg(t *testing.T) {
-	var unpacked = UnpackMessage([]byte(AskForBlocks))
+	var unpacked = UnpackMessage([]byte(askForBlocks))
 	if unpacked != nil {
 		t.Fatalf("accepted invalid message")
 	}

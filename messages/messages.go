@@ -1,4 +1,4 @@
-package protocol
+package messages
 
 import (
 	"bytes"
@@ -9,8 +9,8 @@ import (
 )
 
 const (
-	SendBlock = "SENDING BLOCK"
-	AskForBlocks = "ASKING FOR BLOCKS"
+	sendBlock    = "SENDING BLOCK"
+	askForBlocks = "ASKING FOR BLOCKS"
 )
 
 type SendBlockMsg struct {
@@ -25,9 +25,9 @@ func PackMessage(input any) []byte {
 	switch v := input.(type) {
 	case SendBlockMsg:
 		var encoded, _ = encode.Encode(v.Block)
-		return []byte(fmt.Sprintf("%s\n%s", SendBlock, encoded))
+		return []byte(fmt.Sprintf("%s\n%s", sendBlock, encoded))
 	case AskForBlocksMsg:
-		return []byte(fmt.Sprintf("%s\n%d", AskForBlocks, v.Index))
+		return []byte(fmt.Sprintf("%s\n%d", askForBlocks, v.Index))
 	}
 	return nil
 }
@@ -38,10 +38,10 @@ func UnpackMessage(text []byte) any {
 		return nil
 	}
 	switch string(slices[0]) {
-	case SendBlock:
+	case sendBlock:
 		var decoded, _ = encode.Decode(slices[1])
 		return SendBlockMsg{decoded}
-	case AskForBlocks:
+	case askForBlocks:
 		var index, _ = strconv.ParseUint(string(slices[1]), 10, 64)
 		return AskForBlocksMsg{index}
 	}
