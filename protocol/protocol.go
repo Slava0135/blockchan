@@ -5,12 +5,20 @@ import (
 	"slava0135/blockchan/encode"
 )
 
-func PackMessage(b blockgen.Block) []byte {
-	encoded, _ := encode.Encode(b)
-	return encoded
+type SendBlockMsg struct {
+	Block blockgen.Block
 }
 
-func UnpackMessage(msg []byte) blockgen.Block {
-	decoded, _ := encode.Decode(msg)
-	return decoded
+func PackMessage(input any) []byte {
+	switch v := input.(type) {
+	case SendBlockMsg:
+		var encoded, _ = encode.Encode(v.Block)
+		return encoded
+	}
+	return nil
+}
+
+func UnpackMessage(text []byte) SendBlockMsg {
+	var decoded, _ = encode.Decode(text)
+	return SendBlockMsg{decoded}
 }
