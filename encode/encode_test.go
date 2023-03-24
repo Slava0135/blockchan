@@ -21,3 +21,10 @@ func TestEncodeBlock(t *testing.T) {
 		t.Fatalf("restored block not equals original block")
 	}
 }
+
+func TestDecodeBlock_EmptyText(t *testing.T) {
+	var _, err = Decode([]byte{})
+	if err == nil {
+		t.Fatalf("decoding empty text succeded")
+	}
+}

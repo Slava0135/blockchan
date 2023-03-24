@@ -23,14 +23,17 @@ func Encode(b blockgen.Block) ([]byte, error) {
 	return json.MarshalIndent(e, "", "\t")
 }
 
-func Decode(text []byte) (blockgen.Block, error) {
+func Decode(text []byte) (b blockgen.Block, err error) {
 	var e = encodingBlock{}
-	var err = json.Unmarshal(text, &e)
-	var b = blockgen.Block{}
+	err = json.Unmarshal(text, &e)
+	if err != nil {
+		return
+	}
+	b = blockgen.Block{}
 	b.Index = blockgen.Index(e.Index)
 	b.PrevHash = e.PrevHash
 	b.Hash = e.Hash
-	b.Data = blockgen.Data(e.Data)
+	copy(b.Data[:], e.Data)
 	b.Nonce = blockgen.Nonce(e.Nonce)
-	return b, err
+	return
 }
