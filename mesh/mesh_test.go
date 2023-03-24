@@ -4,6 +4,7 @@ import (
 	"slava0135/blockchan/blockgen"
 	"slava0135/blockchan/node"
 	"testing"
+	"time"
 )
 
 type testFork struct {
@@ -41,6 +42,7 @@ func TestForkMeshSendBlock_Loopback(t *testing.T) {
 	var fork = newTestFork(mesh)
 	var block = blockgen.GenerateGenesisBlock()
 	go mesh.SendBlock(fork, block)
+	time.Sleep(time.Second)
 	select {
 	case <-mesh.ReceiveChan(fork):
 		t.Fatalf("mesh tried to send block back to sender")
@@ -55,13 +57,19 @@ func TestForkMeshSendBlock_ThreeForks(t *testing.T) {
 	var forkTo2 = newTestFork(mesh)
 	var block = blockgen.GenerateGenesisBlock()
 	go mesh.SendBlock(forkFrom, block)
-	var received = <-mesh.ReceiveChan(forkTo1)
-	if !block.Equal(received) {
+	var block1 blockgen.Block
+	var block2 blockgen.Block
+	go func() {
+		block1 = <-mesh.ReceiveChan(forkTo1)
+	}()
+	go func() {
+		block2 = <-mesh.ReceiveChan(forkTo2)
+	}()
+	time.Sleep(time.Second)
+	if !block.Equal(block1) {
 		t.Fatalf("block was not sent to first fork")
 	}
-	select {
-	case <-mesh.ReceiveChan(forkTo2):
-	default:
+	if !block.Equal(block2) {
 		t.Fatalf("block was not sent to second fork")
 	}
 }
