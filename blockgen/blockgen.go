@@ -1,28 +1,26 @@
 package blockgen
 
 import (
+	"bytes"
 	"crypto/sha256"
-	"hash"
 	"strconv"
 )
 
 type Block struct {
-	Index    int
-	PrevHash hash.Hash
-	Hash     hash.Hash
+	Index    Index
+	PrevHash HashSum
+	Hash     HashSum
 	Data     Data
 	Nonce    Nonce
 }
 
+type Index uint64
+type HashSum []byte
 type Data [256]byte
-type Nonce int
+type Nonce uint64
 
 func (b Block) HasValidHash() bool {
-	if b.Hash == nil {
-		return false
-	}
-	var hash = calculateHashFrom(b)
-	return string(b.Hash.Sum(nil)) == string(hash.Sum(nil)) && hasValidEnding(hash)
+	return bytes.Equal(b.Hash, calculateHashFrom(b)) && hasValidEnding(b.Hash)
 }
 
 func GenerateNextFrom(prev Block, data Data, cancel *bool) Block {
@@ -37,7 +35,7 @@ func GenerateNextFrom(prev Block, data Data, cancel *bool) Block {
 
 func GenerateGenesisBlock() Block {
 	var b = Block{}
-	b.PrevHash = sha256.New()
+	b.PrevHash = []byte{}
 	b.GenerateValidHash(nil)
 	return b
 }
@@ -53,16 +51,24 @@ func (b *Block) GenerateValidHash(cancel *bool) {
 	}
 }
 
-func calculateHashFrom(b Block) hash.Hash {
+func calculateHashFrom(b Block) HashSum {
 	var hash = sha256.New()
-	hash.Write([]byte(strconv.Itoa(int(b.Nonce))))
-	hash.Write([]byte(strconv.Itoa(b.Index)))
-	hash.Write(b.PrevHash.Sum(nil))
+	hash.Write([]byte(strconv.FormatUint(uint64(b.Nonce), 10)))
+	hash.Write([]byte(strconv.FormatUint(uint64(b.Index), 10)))
+	hash.Write(b.PrevHash)
 	hash.Write(b.Data[:])
-	return hash
+	return hash.Sum(nil)
 }
 
-func hasValidEnding(h hash.Hash) bool {
-	var sum = h.Sum(nil)
-	return sum[len(sum)-1] == 0 && sum[len(sum)-2] == 0
+func hasValidEnding(h HashSum) bool {
+	return bytes.HasSuffix(h, []byte{0, 0})
+}
+
+func (a Block) Equal(b Block) bool {
+	return a.Index == b.Index &&
+		bytes.Equal(a.PrevHash, b.PrevHash) &&
+		bytes.Equal(a.Hash, b.Hash) &&
+		bytes.Equal(a.Hash, b.Hash) &&
+		bytes.Equal(a.Data[:], b.Data[:]) &&
+		a.Nonce == b.Nonce
 }

@@ -13,7 +13,7 @@ type testMesh struct {
 	connected           bool
 }
 
-func (mesh *testMesh) AllExistingBlocks(from int) []blockgen.Block {
+func (mesh *testMesh) AllExistingBlocks(from blockgen.Index) []blockgen.Block {
 	mesh.timesAskedForBlocks += 1
 	return mesh.existingBlocks[from:]
 }
@@ -67,7 +67,7 @@ func TestNodeStart_GetBlocks(t *testing.T) {
 		t.Fatalf("node blocks amount = %d less than amount of start blocks = %d", len(node.Blocks(0)), len(mesh.existingBlocks))
 	}
 	for i := range mesh.existingBlocks {
-		if node.Blocks(0)[i] != mesh.existingBlocks[i] {
+		if !node.Blocks(0)[i].Equal(mesh.existingBlocks[i]) {
 			t.Fatalf("node block and start block did not match")
 		}
 	}
@@ -132,7 +132,7 @@ func TestNodeRun_SendBlocks(t *testing.T) {
 		t.Fatalf("node did not generate any blocks except genesis")
 	}
 	for i, v := range mesh.receivedBlocks {
-		if node.Blocks(0)[i] != v {
+		if !node.Blocks(0)[i].Equal(v) {
 			t.Fatalf("node did not send correct block")
 		}
 	}
@@ -159,12 +159,12 @@ func TestNodeProcessNextBlock_RejectReceivedBlock(t *testing.T) {
 	var data = testData()
 	var last = mesh.existingBlocks[len(mesh.existingBlocks)-1]
 	var next = blockgen.GenerateNextFrom(last, data, nil)
-	next.Hash.Reset()
+	next.Hash = []byte{}
 	node.Enable()
 	go node.ProcessNextBlock()
 	mesh.chanToNode <- next
 	node.Disable()
-	if len(node.Blocks(0)) > next.Index && node.Blocks(0)[next.Index].Data == data {
+	if blockgen.Index(len(node.Blocks(0))) > next.Index && node.Blocks(0)[next.Index].Data == data {
 		t.Fatalf("node accepted invalid received block")
 	}
 }

@@ -10,7 +10,7 @@ type ForkMesh struct {
 	receiveChannels map[node.Fork]chan blockgen.Block
 }
 
-func (m *ForkMesh) AllExistingBlocks(from int) []blockgen.Block {
+func (m *ForkMesh) AllExistingBlocks(from blockgen.Index) []blockgen.Block {
 	var longest []blockgen.Block
 	var chains = make(map[node.Fork][]blockgen.Block)
 	for fork := range m.receiveChannels {
@@ -30,7 +30,7 @@ func (m *ForkMesh) AllExistingBlocks(from int) []blockgen.Block {
 			count += 1
 			var processed = false
 			for otherFork := range dupForks {
-				if validate.AreSameChains(chain, chains[otherFork]) {
+				if validate.AreEqualChains(chain, chains[otherFork]) {
 					dupForks[otherFork] += 1
 					processed = true
 					break
