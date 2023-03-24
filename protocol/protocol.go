@@ -31,5 +31,16 @@ func (f *RemoteFork) Blocks(index blockgen.Index) []blockgen.Block {
 	go func() {
 		f.link.SendChannel() <- messages.PackMessage(messages.AskForBlocksMsg{Index: uint64(index)})
 	}()
-	return nil
+	var chain []blockgen.Block
+	for msg := range f.link.RecvChannel() {
+		var got = messages.UnpackMessage(msg)
+		var b, ok = got.(messages.SendBlockMsg)
+		if ok {
+			chain = append(chain, b.Block)
+			if b.LastBlockIndex == uint64(b.Block.Index) {
+				break
+			}
+		}
+	}
+	return chain
 }

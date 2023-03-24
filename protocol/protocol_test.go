@@ -52,6 +52,12 @@ func TestBlocks(t *testing.T) {
 	for i := byte(0); i < 3; i += 1 {
 		chain = append(chain, blockgen.GenerateNextFrom(chain[i], blockgen.Data{}, nil))
 	}
+	var lastIndex = chain[len(chain)-1].Index
+	go func() {
+		for i := range chain {
+			link.recvChan <- messages.PackMessage(messages.SendBlockMsg{Block: chain[i], LastBlockIndex: uint64(lastIndex)})
+		}
+	}()
 	var got = remote.Blocks(0)
 	if !validate.AreEqualChains(chain, got) {
 		t.Fatalf("failed to get blocks from remote")
