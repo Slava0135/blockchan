@@ -18,11 +18,9 @@ func TestGenerateNextFrom_Index(t *testing.T) {
 
 func TestGenerateNextFrom_PrevHash(t *testing.T) {
 	var prev = GenerateGenesisBlock()
-	prev.Hash.Write([]byte("test"))
+	prev.Hash = []byte{}
 	var next = GenerateNextFrom(prev, Data{}, nil)
-	var prevSum = next.PrevHash.Sum(nil)
-	var wantSum = prev.Hash.Sum(nil)
-	if !bytes.Equal(prevSum, wantSum) {
+	if !bytes.Equal(next.PrevHash, prev.Hash) {
 		t.Fatalf("previous hash is incorrect")
 	}
 }
@@ -41,7 +39,7 @@ func TestGenerateNextFrom_Data(t *testing.T) {
 func TestGenerateNextFrom_Hash(t *testing.T) {
 	var prev = GenerateGenesisBlock()
 	var next = GenerateNextFrom(prev, Data{}, nil)
-	var sum = fmt.Sprintf("%x", next.Hash.Sum(nil))
+	var sum = fmt.Sprintf("%x", next.Hash)
 	var ending = sum[len(sum)-4:]
 	const want = "0000"
 	if ending != want {
@@ -52,10 +50,10 @@ func TestGenerateNextFrom_Hash(t *testing.T) {
 func TestGenerateNextFrom_HashUseIndex(t *testing.T) {
 	var prev = GenerateGenesisBlock()
 	var nextOne = GenerateNextFrom(prev, Data{}, nil)
-	var sumOne = nextOne.Hash.Sum(nil)
+	var sumOne = nextOne.Hash
 	prev.Index += 1
 	var nextTwo = GenerateNextFrom(prev, Data{}, nil)
-	var sumTwo = nextTwo.Hash.Sum(nil)
+	var sumTwo = nextTwo.Hash
 	if bytes.Equal(sumOne, sumTwo) {
 		t.Fatalf("got same hashes for different index values")
 	}
@@ -64,11 +62,9 @@ func TestGenerateNextFrom_HashUseIndex(t *testing.T) {
 func TestGenerateNextFrom_HashUsePrevHash(t *testing.T) {
 	var prev = GenerateGenesisBlock()
 	var nextOne = GenerateNextFrom(prev, Data{}, nil)
-	var sumOne = nextOne.Hash.Sum(nil)
-	prev.Hash.Write([]byte{42})
+	prev.Hash = []byte{}
 	var nextTwo = GenerateNextFrom(prev, Data{}, nil)
-	var sumTwo = nextTwo.Hash.Sum(nil)
-	if bytes.Equal(sumOne, sumTwo) {
+	if bytes.Equal(nextOne.Hash, nextTwo.Hash) {
 		t.Fatalf("got same hashes for different prev hashes values")
 	}
 }
@@ -76,10 +72,8 @@ func TestGenerateNextFrom_HashUsePrevHash(t *testing.T) {
 func TestGenerateNextFrom_HashUseData(t *testing.T) {
 	var prev = GenerateGenesisBlock()
 	var nextOne = GenerateNextFrom(prev, Data{1}, nil)
-	var sumOne = nextOne.Hash.Sum(nil)
 	var nextTwo = GenerateNextFrom(prev, Data{2}, nil)
-	var sumTwo = nextTwo.Hash.Sum(nil)
-	if bytes.Equal(sumOne, sumTwo) {
+	if bytes.Equal(nextOne.Hash, nextTwo.Hash) {
 		t.Fatalf("got same hashes for different data values")
 	}
 }

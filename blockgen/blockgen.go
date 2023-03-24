@@ -4,19 +4,19 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"encoding/binary"
-	"hash"
 	"strconv"
 )
 
 type Block struct {
 	Index    Index
-	PrevHash hash.Hash
-	Hash     hash.Hash
+	PrevHash HashSum
+	Hash     HashSum
 	Data     Data
 	Nonce    Nonce
 }
 
 type Index uint64
+type HashSum []byte
 type Data [256]byte
 type Nonce uint64
 
@@ -25,7 +25,7 @@ func (b Block) HasValidHash() bool {
 		return false
 	}
 	var hash = calculateHashFrom(b)
-	return bytes.Equal(b.Hash.Sum(nil), hash.Sum(nil)) && hasValidEnding(hash)
+	return bytes.Equal(b.Hash, hash) && hasValidEnding(hash)
 }
 
 func GenerateNextFrom(prev Block, data Data, cancel *bool) Block {
@@ -40,7 +40,7 @@ func GenerateNextFrom(prev Block, data Data, cancel *bool) Block {
 
 func GenerateGenesisBlock() Block {
 	var b = Block{}
-	b.PrevHash = sha256.New()
+	b.PrevHash = []byte{}
 	b.GenerateValidHash(nil)
 	return b
 }
@@ -56,17 +56,17 @@ func (b *Block) GenerateValidHash(cancel *bool) {
 	}
 }
 
-func calculateHashFrom(b Block) hash.Hash {
+func calculateHashFrom(b Block) HashSum {
 	var hash = sha256.New()
 	hash.Write([]byte(strconv.FormatUint(uint64(b.Nonce), 10)))
 	hash.Write([]byte(strconv.FormatUint(uint64(b.Index), 10)))
-	hash.Write(b.PrevHash.Sum(nil))
+	hash.Write(b.PrevHash)
 	hash.Write(b.Data[:])
-	return hash
+	return hash.Sum(nil)
 }
 
-func hasValidEnding(h hash.Hash) bool {
-	return bytes.HasSuffix(h.Sum(nil), []byte{0, 0})
+func hasValidEnding(h HashSum) bool {
+	return bytes.HasSuffix(h, []byte{0, 0})
 }
 
 func (b *Block) MarshalBinary() (data []byte, err error) {

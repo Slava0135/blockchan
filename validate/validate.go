@@ -14,7 +14,7 @@ func IsValidChain(chain []blockgen.Block) bool {
 			if chain[i].Index != chain[i-1].Index+1 {
 				return false
 			}
-			if chain[i].PrevHash != chain[i-1].Hash {
+			if !bytes.Equal(chain[i].PrevHash, chain[i-1].Hash) {
 				return false
 			}
 		}
@@ -27,7 +27,7 @@ func AreSameChains(a, b []blockgen.Block) bool {
 		return false
 	}
 	for i := range a {
-		if !bytes.Equal(a[i].Hash.Sum(nil), b[i].Hash.Sum(nil)) {
+		if !bytes.Equal(a[i].Hash, b[i].Hash) {
 			return false
 		}
 	}
