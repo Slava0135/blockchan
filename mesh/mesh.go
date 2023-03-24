@@ -8,6 +8,7 @@ import (
 
 type ForkMesh struct {
 	receiveChannels map[node.Fork]chan blockgen.Block
+	Mentor          node.Fork
 }
 
 func (m *ForkMesh) AllExistingBlocks(from blockgen.Index) []blockgen.Block {
@@ -80,6 +81,10 @@ func (m *ForkMesh) Connect(f node.Fork) {
 func (m *ForkMesh) Disconnect(f node.Fork) {
 	close(m.receiveChannels[f])
 	delete(m.receiveChannels, f)
+}
+
+func (m *ForkMesh) MentorFork() node.Fork {
+	return m.Mentor
 }
 
 func NewForkMesh() *ForkMesh {
