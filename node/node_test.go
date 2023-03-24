@@ -57,8 +57,8 @@ func TestNodeStart_GetBlocks(t *testing.T) {
 	var mesh = newTestMesh()
 	var node = NewNode(&mesh)
 	node.Enable()
-	node.ProcessNextBlock()
-	node.ProcessNextBlock()
+	node.ProcessNextBlock(blockgen.Data{})
+	node.ProcessNextBlock(blockgen.Data{})
 	node.Disable()
 	if mesh.timesAskedForBlocks == 0 {
 		t.Fatalf("node did not ask for blocks")
@@ -121,9 +121,9 @@ func TestNodeRun_SendBlocks(t *testing.T) {
 	var mesh = testMesh{}
 	var node = NewNode(&mesh)
 	node.Enable()
-	node.ProcessNextBlock()
-	node.ProcessNextBlock()
-	node.ProcessNextBlock()
+	node.ProcessNextBlock(blockgen.Data{})
+	node.ProcessNextBlock(blockgen.Data{})
+	node.ProcessNextBlock(blockgen.Data{})
 	node.Disable()
 	if len(node.Blocks(0)) != len(mesh.receivedBlocks) {
 		t.Fatalf("node blocks amount = %d not equals amount of sent blocks = %d", len(node.Blocks(0)), len(mesh.receivedBlocks))
@@ -145,7 +145,7 @@ func TestNodeProcessNextBlock_AcceptReceivedBlock(t *testing.T) {
 	var last = mesh.existingBlocks[len(mesh.existingBlocks)-1]
 	var next = blockgen.GenerateNextFrom(last, data, nil)
 	node.Enable()
-	go node.ProcessNextBlock()
+	go node.ProcessNextBlock(blockgen.Data{})
 	mesh.chanToNode <- next
 	node.Disable()
 	if node.Blocks(0)[next.Index].Data != data {
@@ -161,7 +161,7 @@ func TestNodeProcessNextBlock_RejectReceivedBlock(t *testing.T) {
 	var next = blockgen.GenerateNextFrom(last, data, nil)
 	next.Hash = []byte{}
 	node.Enable()
-	go node.ProcessNextBlock()
+	go node.ProcessNextBlock(blockgen.Data{})
 	mesh.chanToNode <- next
 	node.Disable()
 	if blockgen.Index(len(node.Blocks(0))) > next.Index && node.Blocks(0)[next.Index].Data == data {
@@ -177,7 +177,7 @@ func TestNodeProcessNextBlock_AcceptMissedBlock(t *testing.T) {
 	var next = blockgen.GenerateNextFrom(last, data, nil)
 	var nextnext = blockgen.GenerateNextFrom(next, data, nil)
 	node.Enable()
-	go node.ProcessNextBlock()
+	go node.ProcessNextBlock(blockgen.Data{})
 	mesh.existingBlocks = append(mesh.existingBlocks, next, nextnext)
 	mesh.chanToNode <- nextnext
 	node.Disable()
@@ -198,7 +198,7 @@ func TestNodeProcessNextBlock_IgnoreOldBlock(t *testing.T) {
 	var data = testData()
 	var old = blockgen.GenerateNextFrom(mesh.existingBlocks[0], data, nil)
 	node.Enable()
-	go node.ProcessNextBlock()
+	go node.ProcessNextBlock(blockgen.Data{})
 	mesh.chanToNode <- old
 	node.Disable()
 	if node.Blocks(0)[old.Index].Data == data {
@@ -226,10 +226,10 @@ func TestNodeProcessNextBlock_DoubleProcess(t *testing.T) {
 	var success = new(bool)
 	go func() {
 		defer func() { _ = recover() }()
-		node.ProcessNextBlock()
+		node.ProcessNextBlock(blockgen.Data{})
 		*success = true
 	}()
-	node.ProcessNextBlock()
+	node.ProcessNextBlock(blockgen.Data{})
 	if *success {
 		t.Fatalf("node did not panic because of double processing")
 	}
