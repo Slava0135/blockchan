@@ -31,7 +31,7 @@ func TestForkMesh_SendAndReceive(t *testing.T) {
 	var sent = blockgen.GenerateGenesisBlock()
 	go mesh.SendBlock(forkFrom, sent)
 	var received = <-mesh.ReceiveChan(forkTo)
-	if !blockgen.AreEqualBlocks(sent, received) {
+	if !sent.Equal(received) {
 		t.Fatalf("block was not sent")
 	}
 }
@@ -56,7 +56,7 @@ func TestForkMeshSendBlock_ThreeForks(t *testing.T) {
 	var block = blockgen.GenerateGenesisBlock()
 	go mesh.SendBlock(forkFrom, block)
 	var received = <-mesh.ReceiveChan(forkTo1)
-	if !blockgen.AreEqualBlocks(block, received) {
+	if !block.Equal(received) {
 		t.Fatalf("block was not sent to first fork")
 	}
 	select {
@@ -163,7 +163,7 @@ func TestForkMeshAllExistingBlocks_SameIndex(t *testing.T) {
 	fork2.blocks = chainMajor
 	fork3.blocks = fork2.blocks
 	var got = mesh.AllExistingBlocks(0)
-	if !blockgen.AreEqualBlocks(got[len(got)-1], nextMajor) {
+	if !got[len(got)-1].Equal(nextMajor) {
 		t.Fatalf("mesh did not prefer major chain over minor")
 	}
 }

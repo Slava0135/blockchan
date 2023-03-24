@@ -2,7 +2,6 @@ package blockgen
 
 import (
 	"bytes"
-	"encoding"
 	"fmt"
 	"testing"
 )
@@ -116,35 +115,47 @@ func TestGenerateNextFrom_Cancel(t *testing.T) {
 	}
 }
 
-func TestBlockMarshal(t *testing.T) {
-	var prev = GenerateGenesisBlock()
-	var next = GenerateNextFrom(prev, Data{1, 2, 3, 4, 5}, nil)
-	var i any = &next
-	marshaler, ok := i.(encoding.BinaryMarshaler)
-	if !ok {
-		t.Fatalf("block does not implement encoding.BinaryMarshaler")
-	}
-	data, err := marshaler.MarshalBinary()
-	if err != nil {
-		t.Fatalf("failed to marshal valid block")
-	}
-	var restored = Block{}
-	i = &restored
-	unmarshaler, ok := i.(encoding.BinaryUnmarshaler)
-	if !ok {
-		t.Fatalf("block does not implement encoding.BinaryUnmarshaler")
-	}
-	unmarshaler.UnmarshalBinary(data)
-	if !AreEqualBlocks(next, restored) {
-		t.Fatalf("original block and restored blocks are different")
-	}
-}
-
 func TestAreEqualBlocks_Index(t *testing.T) {
 	var a = GenerateGenesisBlock()
 	var b = GenerateGenesisBlock()
 	b.Index += 1
-	if AreEqualBlocks(a, b) {
+	if a.Equal(b) {
 		t.Fatalf("blocks with different index are equal")
+	}
+}
+
+func TestAreEqualBlocks_PrevHash(t *testing.T) {
+	var a = GenerateGenesisBlock()
+	var b = GenerateGenesisBlock()
+	b.PrevHash = append(b.PrevHash, 42)
+	if a.Equal(b) {
+		t.Fatalf("blocks with different prev hashes are equal")
+	}
+}
+
+func TestAreEqualBlocks_Hash(t *testing.T) {
+	var a = GenerateGenesisBlock()
+	var b = GenerateGenesisBlock()
+	b.Hash = append(b.Hash, 42)
+	if a.Equal(b) {
+		t.Fatalf("blocks with different hashes are equal")
+	}
+}
+
+func TestAreEqualBlocks_Data(t *testing.T) {
+	var a = GenerateGenesisBlock()
+	var b = GenerateGenesisBlock()
+	b.Data[0] += 1
+	if a.Equal(b) {
+		t.Fatalf("blocks with different data are equal")
+	}
+}
+
+func TestAreEqualBlocks_Nonce(t *testing.T) {
+	var a = GenerateGenesisBlock()
+	var b = GenerateGenesisBlock()
+	b.Nonce += 1
+	if a.Equal(b) {
+		t.Fatalf("blocks with different nonce are equal")
 	}
 }

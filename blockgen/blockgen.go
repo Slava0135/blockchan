@@ -3,7 +3,6 @@ package blockgen
 import (
 	"bytes"
 	"crypto/sha256"
-	"encoding/binary"
 	"strconv"
 )
 
@@ -69,24 +68,24 @@ func hasValidEnding(h HashSum) bool {
 	return bytes.HasSuffix(h, []byte{0, 0})
 }
 
-func (b *Block) MarshalBinary() (data []byte, err error) {
-	data = binary.BigEndian.AppendUint64(data, uint64(b.Index))
-	return
-}
-
-func (b *Block) UnmarshalBinary(data []byte) error {
-	var _, val = consumeUint64(data)
-	b.Index = Index(val)
-	return nil
-}
-
-func consumeUint64(b []byte) ([]byte, uint64) {
-	_ = b[7]
-	x := uint64(b[7]) | uint64(b[6])<<8 | uint64(b[5])<<16 | uint64(b[4])<<24 |
-		uint64(b[3])<<32 | uint64(b[2])<<40 | uint64(b[1])<<48 | uint64(b[0])<<56
-	return b[8:], x
-}
-
-func AreEqualBlocks(a, b Block) bool {
-	return a.Index == b.Index
+func (a Block) Equal(b Block) bool {
+	if a.Index != b.Index {
+		return false
+	}
+	if !bytes.Equal(a.PrevHash, b.PrevHash) {
+		return false
+	}
+	if !bytes.Equal(a.Hash, b.Hash) {
+		return false
+	}
+	if !bytes.Equal(a.Hash, b.Hash) {
+		return false
+	}
+	if !bytes.Equal(a.Data[:], b.Data[:]) {
+		return false
+	}
+	if a.Nonce != b.Nonce {
+		return false
+	}
+	return true
 }

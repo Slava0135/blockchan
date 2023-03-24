@@ -67,7 +67,7 @@ func TestNodeStart_GetBlocks(t *testing.T) {
 		t.Fatalf("node blocks amount = %d less than amount of start blocks = %d", len(node.Blocks(0)), len(mesh.existingBlocks))
 	}
 	for i := range mesh.existingBlocks {
-		if !blockgen.AreEqualBlocks(node.Blocks(0)[i], mesh.existingBlocks[i]) {
+		if !node.Blocks(0)[i].Equal(mesh.existingBlocks[i]) {
 			t.Fatalf("node block and start block did not match")
 		}
 	}
@@ -132,7 +132,7 @@ func TestNodeRun_SendBlocks(t *testing.T) {
 		t.Fatalf("node did not generate any blocks except genesis")
 	}
 	for i, v := range mesh.receivedBlocks {
-		if !blockgen.AreEqualBlocks(node.Blocks(0)[i], v) {
+		if !node.Blocks(0)[i].Equal(v) {
 			t.Fatalf("node did not send correct block")
 		}
 	}
