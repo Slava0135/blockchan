@@ -30,3 +30,10 @@ func TestPackMessage_AskForBlocks(t *testing.T) {
 		t.Fatalf("failed to ask for message")
 	}
 }
+
+func TestUnpackMessage_InvalidMsg(t *testing.T) {
+	var unpacked = UnpackMessage([]byte(AskForBlocks))
+	if unpacked != nil {
+		t.Fatalf("accepted invalid message")
+	}
+}

@@ -34,6 +34,9 @@ func PackMessage(input any) []byte {
 
 func UnpackMessage(text []byte) any {
 	var slices = bytes.SplitN(text, []byte{'\n'}, 2)
+	if len(slices) != 2 {
+		return nil
+	}
 	switch string(slices[0]) {
 	case SendBlock:
 		var decoded, _ = encode.Decode(slices[1])
