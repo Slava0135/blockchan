@@ -135,16 +135,16 @@ func TestBlockMarshal(t *testing.T) {
 		t.Fatalf("block does not implement encoding.BinaryUnmarshaler")
 	}
 	unmarshaler.UnmarshalBinary(data)
-	if !AreSameBlocks(next, restored) {
+	if !AreEqualBlocks(next, restored) {
 		t.Fatalf("original block and restored blocks are different")
 	}
 }
 
-func TestAreSameBlocks_Index(t *testing.T) {
+func TestAreEqualBlocks_Index(t *testing.T) {
 	var a = GenerateGenesisBlock()
 	var b = GenerateGenesisBlock()
 	b.Index += 1
-	if AreSameBlocks(a, b) {
-		t.Fatalf("blocks with different index are same")
+	if AreEqualBlocks(a, b) {
+		t.Fatalf("blocks with different index are equal")
 	}
 }

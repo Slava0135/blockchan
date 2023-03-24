@@ -87,6 +87,6 @@ func consumeUint64(b []byte) ([]byte, uint64) {
 	return b[8:], x
 }
 
-func AreSameBlocks(a, b Block) bool {
+func AreEqualBlocks(a, b Block) bool {
 	return a.Index == b.Index
 }

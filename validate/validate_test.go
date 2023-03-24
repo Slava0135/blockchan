@@ -55,32 +55,32 @@ func TestIsValidChain_WrongIndex(t *testing.T) {
 	}
 }
 
-func TestAreSameChains_SameChains(t *testing.T) {
+func TestAreEqualChains_SameChains(t *testing.T) {
 	var chain = []blockgen.Block{blockgen.GenerateGenesisBlock()}
 	for i := byte(0); i < 3; i += 1 {
 		chain = append(chain, blockgen.GenerateNextFrom(chain[i], blockgen.Data{}, nil))
 	}
-	if !AreSameChains(chain, chain) {
-		t.Fatalf("single chain is not the same")
+	if !AreEqualChains(chain, chain) {
+		t.Fatalf("single chain is not equal to itself")
 	}
 }
 
-func TestAreSameChains_DifferentChains(t *testing.T) {
+func TestAreEqualChains_DifferentChains(t *testing.T) {
 	var chain = []blockgen.Block{blockgen.GenerateGenesisBlock()}
 	for i := byte(0); i < 5; i += 1 {
 		chain = append(chain, blockgen.GenerateNextFrom(chain[i], blockgen.Data{1}, nil))
 	}
-	if AreSameChains(chain[0:2], chain[2:4]) {
-		t.Fatalf("different chains are same")
+	if AreEqualChains(chain[0:2], chain[2:4]) {
+		t.Fatalf("different chains are equal")
 	}
 }
 
-func TestAreSameChains_DifferentLengths(t *testing.T) {
+func TestAreEqualChains_DifferentLengths(t *testing.T) {
 	var chain = []blockgen.Block{blockgen.GenerateGenesisBlock()}
 	for i := byte(0); i < 5; i += 1 {
 		chain = append(chain, blockgen.GenerateNextFrom(chain[i], blockgen.Data{1}, nil))
 	}
-	if AreSameChains(chain[0:2], chain[0:4]) {
-		t.Fatalf("different chains are same")
+	if AreEqualChains(chain[0:2], chain[0:4]) {
+		t.Fatalf("different chains are equal")
 	}
 }

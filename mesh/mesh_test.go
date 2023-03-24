@@ -31,7 +31,7 @@ func TestForkMesh_SendAndReceive(t *testing.T) {
 	var sent = blockgen.GenerateGenesisBlock()
 	go mesh.SendBlock(forkFrom, sent)
 	var received = <-mesh.ReceiveChan(forkTo)
-	if !blockgen.AreSameBlocks(sent, received) {
+	if !blockgen.AreEqualBlocks(sent, received) {
 		t.Fatalf("block was not sent")
 	}
 }
@@ -56,7 +56,7 @@ func TestForkMeshSendBlock_ThreeForks(t *testing.T) {
 	var block = blockgen.GenerateGenesisBlock()
 	go mesh.SendBlock(forkFrom, block)
 	var received = <-mesh.ReceiveChan(forkTo1)
-	if !blockgen.AreSameBlocks(block, received)  {
+	if !blockgen.AreEqualBlocks(block, received) {
 		t.Fatalf("block was not sent to first fork")
 	}
 	select {
@@ -141,7 +141,7 @@ func TestForkMeshAllExistingBlocks_CheckIndex(t *testing.T) {
 	var from = blockgen.Index(2)
 	if mesh.AllExistingBlocks(from)[0].Index != from {
 		t.Fatalf("mesh accepted chain with different index")
-	} 
+	}
 }
 
 func TestForkMeshAllExistingBlocks_SameIndex(t *testing.T) {
@@ -160,10 +160,10 @@ func TestForkMeshAllExistingBlocks_SameIndex(t *testing.T) {
 	var nextMajor = blockgen.GenerateNextFrom(chain[len(chain)-1], blockgen.Data{2}, nil)
 	var chainMajor = []blockgen.Block(chain[:])
 	chainMajor = append(chainMajor, nextMajor)
-	fork2.blocks = chainMajor 
+	fork2.blocks = chainMajor
 	fork3.blocks = fork2.blocks
 	var got = mesh.AllExistingBlocks(0)
-	if !blockgen.AreSameBlocks(got[len(got)-1], nextMajor) {
+	if !blockgen.AreEqualBlocks(got[len(got)-1], nextMajor) {
 		t.Fatalf("mesh did not prefer major chain over minor")
 	}
 }

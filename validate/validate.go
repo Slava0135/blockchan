@@ -22,7 +22,7 @@ func IsValidChain(chain []blockgen.Block) bool {
 	return true
 }
 
-func AreSameChains(a, b []blockgen.Block) bool {
+func AreEqualChains(a, b []blockgen.Block) bool {
 	if len(a) != len(b) {
 		return false
 	}

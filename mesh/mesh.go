@@ -30,7 +30,7 @@ func (m *ForkMesh) AllExistingBlocks(from blockgen.Index) []blockgen.Block {
 			count += 1
 			var processed = false
 			for otherFork := range dupForks {
-				if validate.AreSameChains(chain, chains[otherFork]) {
+				if validate.AreEqualChains(chain, chains[otherFork]) {
 					dupForks[otherFork] += 1
 					processed = true
 					break
