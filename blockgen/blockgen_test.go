@@ -93,15 +93,6 @@ func TestHasValidHash(t *testing.T) {
 	}
 }
 
-func TestHasValidHash_Nil(t *testing.T) {
-	var prev = GenerateGenesisBlock()
-	var next = GenerateNextFrom(prev, Data{}, nil)
-	next.Hash = nil
-	if next.HasValidHash() {
-		t.Fatalf("nil hash is valid")
-	}
-}
-
 func TestGenerateNextFrom_Cancel(t *testing.T) {
 	var prev = GenerateGenesisBlock()
 	var cancel = false

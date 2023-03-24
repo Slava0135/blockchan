@@ -20,11 +20,7 @@ type Data [256]byte
 type Nonce uint64
 
 func (b Block) HasValidHash() bool {
-	if b.Hash == nil {
-		return false
-	}
-	var hash = calculateHashFrom(b)
-	return bytes.Equal(b.Hash, hash) && hasValidEnding(hash)
+	return bytes.Equal(b.Hash, calculateHashFrom(b)) && hasValidEnding(b.Hash)
 }
 
 func GenerateNextFrom(prev Block, data Data, cancel *bool) Block {
