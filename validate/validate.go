@@ -27,7 +27,7 @@ func AreEqualChains(a, b []blockgen.Block) bool {
 		return false
 	}
 	for i := range a {
-		if !bytes.Equal(a[i].Hash, b[i].Hash) {
+		if !a[i].Equal(b[i]) {
 			return false
 		}
 	}
