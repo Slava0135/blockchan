@@ -4,6 +4,7 @@ import (
 	"slava0135/blockchan/blockgen"
 	"slava0135/blockchan/mesh"
 	"slava0135/blockchan/messages"
+	"slava0135/blockchan/validate"
 	"testing"
 )
 
@@ -40,5 +41,19 @@ func TestSendBlock(t *testing.T) {
 	}
 	if !block.Equal(received.Block) {
 		t.Fatalf("got corrupted block through link")
+	}
+}
+
+func TestBlocks(t *testing.T) {
+	var link = newTestLink()
+	var mesh = mesh.NewForkMesh()
+	var remote = NewRemoteFork(mesh, link)
+	var chain = []blockgen.Block{blockgen.GenerateGenesisBlock()}
+	for i := byte(0); i < 3; i += 1 {
+		chain = append(chain, blockgen.GenerateNextFrom(chain[i], blockgen.Data{}, nil))
+	}
+	var got = remote.Blocks(0)
+	if !validate.AreEqualChains(chain, got) {
+		t.Fatalf("failed to get blocks from remote")
 	}
 }

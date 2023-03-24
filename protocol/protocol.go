@@ -26,3 +26,10 @@ func (f *RemoteFork) SendBlock(b blockgen.Block) {
 		f.link.SendChannel() <- messages.PackMessage(messages.SendBlockMsg{Block: b})
 	}()
 }
+
+func (f *RemoteFork) Blocks(index blockgen.Index) []blockgen.Block {
+	go func() {
+		f.link.SendChannel() <- messages.PackMessage(messages.AskForBlocksMsg{Index: uint64(index)})
+	}()
+	return nil
+}
