@@ -7,7 +7,7 @@ import (
 
 func TestPackMessage_SendBlock(t *testing.T) {
 	var block = blockgen.GenerateNextFrom(blockgen.GenerateGenesisBlock(), blockgen.Data{1, 2, 3}, nil)
-	var msg = PackMessage(SendBlockMsg{block})
+	var msg = PackMessage(SendBlockMsg{block, uint64(block.Index)})
 	var unpacked = UnpackMessage(msg)
 	var received, ok = unpacked.(SendBlockMsg)
 	if !ok {
@@ -15,6 +15,9 @@ func TestPackMessage_SendBlock(t *testing.T) {
 	}
 	if !block.Equal(received.Block) {
 		t.Fatalf("failed to send message with block")
+	}
+	if received.LastBlockIndex != uint64(block.Index) {
+		t.Fatalf("last block index is incorrect")
 	}
 }
 
