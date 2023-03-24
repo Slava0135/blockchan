@@ -28,13 +28,13 @@ func (f *RemoteFork) Blocks(index blockgen.Index) []blockgen.Block {
 	go func() {
 		f.link.SendChannel() <- messages.PackMessage(messages.AskForBlocksMsg{Index: uint64(index)})
 	}()
-	var chain []blockgen.Block
+	var chain = make(map[blockgen.Index]blockgen.Block)
 	var expectedLen uint64 = 0
 	for msg := range f.link.RecvChannel() {
 		var got = messages.UnpackMessage(msg)
 		var b, ok = got.(messages.SendBlockMsg)
-		if ok {
-			chain = append(chain, b.Block)
+		if ok && b.Block.Index >= index {
+			chain[b.Block.Index] = b.Block
 			var newLen = b.LastBlockIndex - uint64(index) + 1
 			if newLen > expectedLen {
 				expectedLen = newLen

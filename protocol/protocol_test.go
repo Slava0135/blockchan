@@ -96,6 +96,49 @@ func TestBlocks_Unsorted(t *testing.T) {
 	}
 }
 
+func TestBlocks_DoubleSend(t *testing.T) {
+	var link = newTestLink()
+	var mesh = mesh.NewForkMesh()
+	var remote = NewRemoteFork(mesh, link)
+	var chain = []blockgen.Block{blockgen.GenerateGenesisBlock()}
+	for i := byte(0); i < 3; i += 1 {
+		chain = append(chain, blockgen.GenerateNextFrom(chain[i], blockgen.Data{}, nil))
+	}
+	var lastIndex = chain[3].Index
+	go func() {
+		link.recvChan <- messages.PackMessage(messages.SendBlockMsg{Block: chain[3], LastBlockIndex: uint64(lastIndex)})
+		link.recvChan <- messages.PackMessage(messages.SendBlockMsg{Block: chain[1], LastBlockIndex: uint64(lastIndex)})
+		link.recvChan <- messages.PackMessage(messages.SendBlockMsg{Block: chain[1], LastBlockIndex: uint64(lastIndex)})
+		link.recvChan <- messages.PackMessage(messages.SendBlockMsg{Block: chain[2], LastBlockIndex: uint64(lastIndex)})
+		link.recvChan <- messages.PackMessage(messages.SendBlockMsg{Block: chain[0], LastBlockIndex: uint64(lastIndex)})
+	}()
+	var got = remote.Blocks(0)
+	if !validate.AreEqualChains(chain, got) {
+		t.Fatalf("failed to get blocks from remote; want = %d; got = %d", len(chain), len(got))
+	}
+}
+
+func TestBlocks_OldBlock(t *testing.T) {
+	var link = newTestLink()
+	var mesh = mesh.NewForkMesh()
+	var remote = NewRemoteFork(mesh, link)
+	var chain = []blockgen.Block{blockgen.GenerateGenesisBlock()}
+	for i := byte(0); i < 3; i += 1 {
+		chain = append(chain, blockgen.GenerateNextFrom(chain[i], blockgen.Data{}, nil))
+	}
+	var lastIndex = chain[3].Index
+	go func() {
+		link.recvChan <- messages.PackMessage(messages.SendBlockMsg{Block: chain[3], LastBlockIndex: uint64(lastIndex)})
+		link.recvChan <- messages.PackMessage(messages.SendBlockMsg{Block: chain[1], LastBlockIndex: uint64(lastIndex)})
+		link.recvChan <- messages.PackMessage(messages.SendBlockMsg{Block: chain[0], LastBlockIndex: uint64(lastIndex)})
+		link.recvChan <- messages.PackMessage(messages.SendBlockMsg{Block: chain[2], LastBlockIndex: uint64(lastIndex)})
+	}()
+	var got = remote.Blocks(1)
+	if !validate.AreEqualChains(chain[1:], got) {
+		t.Fatalf("failed to get blocks from remote; want = %d; got = %d", len(chain), len(got))
+	}
+}
+
 func TestListen_AskedForBlocks(t *testing.T) {
 	var mesh = mesh.NewForkMesh()
 	var mentor = &testFork{}
