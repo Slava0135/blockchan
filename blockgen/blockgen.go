@@ -3,6 +3,7 @@ package blockgen
 import (
 	"bytes"
 	"crypto/sha256"
+	"fmt"
 	"strconv"
 )
 
@@ -71,4 +72,8 @@ func (a Block) Equal(b Block) bool {
 		bytes.Equal(a.Hash, b.Hash) &&
 		bytes.Equal(a.Data[:], b.Data[:]) &&
 		a.Nonce == b.Nonce
+}
+
+func (b Block) String() string {
+	return fmt.Sprintf("\nIndex = %d\nPrevHash = %x\nHash = %x\nData = %x\nNonce = %x\n", b.Index, b.PrevHash, b.Hash, b.Data, b.Nonce)
 }

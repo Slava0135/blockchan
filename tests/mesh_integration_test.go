@@ -32,6 +32,7 @@ func TestMeshAndTwoNodes(t *testing.T) {
 	if !validate.IsValidChain(chain) {
 		t.Fatalf("chain was not valid")
 	}
+	t.Log(chain)
 }
 
 func TestMeshAndThreeNodes(t *testing.T) {
@@ -52,4 +53,5 @@ func TestMeshAndThreeNodes(t *testing.T) {
 	if !validate.IsValidChain(chain) {
 		t.Fatalf("chain was not valid")
 	}
+	t.Log(chain)
 }
