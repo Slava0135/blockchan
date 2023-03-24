@@ -21,6 +21,14 @@ func newTestLink() *testLink {
 	return link
 }
 
+type testFork struct {
+	blocks []blockgen.Block
+}
+
+func (f *testFork) Blocks(from blockgen.Index) []blockgen.Block {
+	return f.blocks[from:]
+}
+
 func (l *testLink) SendChannel() chan []byte {
 	return l.sendChan
 }
@@ -29,7 +37,7 @@ func (l *testLink) RecvChannel() chan []byte {
 	return l.recvChan
 }
 
-func TestSendBlock(t *testing.T) {
+func TestListen_SendBlock(t *testing.T) {
 	var link = newTestLink()
 	var mesh = mesh.NewForkMesh()
 	var remote = NewRemoteFork(mesh, link)
@@ -85,5 +93,28 @@ func TestBlocks_Unsorted(t *testing.T) {
 	var got = remote.Blocks(0)
 	if !validate.AreEqualChains(chain, got) {
 		t.Fatalf("failed to get blocks from remote; want = %d; got = %d", len(chain), len(got))
+	}
+}
+
+func TestListen_AskedForBlocks(t *testing.T) {
+	var mesh = mesh.NewForkMesh()
+	var mentor = &testFork{}
+	mesh.Mentor = mentor
+	var chain = []blockgen.Block{blockgen.GenerateGenesisBlock()}
+	for i := byte(0); i < 3; i += 1 {
+		chain = append(chain, blockgen.GenerateNextFrom(chain[i], blockgen.Data{}, nil))
+	}
+	mentor.blocks = chain
+	var linkSender = newTestLink()
+	var linkReceiver = &testLink{}
+	linkReceiver.recvChan = linkSender.sendChan
+	linkReceiver.sendChan = linkSender.recvChan
+	var remoteSender = NewRemoteFork(mesh, linkSender)
+	var remoteReceiver = NewRemoteFork(mesh, linkReceiver)
+	go remoteSender.Listen(nil)
+	go remoteReceiver.Listen(nil)
+	var got = remoteReceiver.Blocks(0)
+	if !validate.AreEqualChains(got, chain) {
+		t.Fatalf("failed to send chain for request")
 	}
 }
