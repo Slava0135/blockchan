@@ -1,7 +1,6 @@
 package encode
 
 import (
-	"fmt"
 	"slava0135/blockchan/blockgen"
 	"testing"
 )
@@ -17,7 +16,7 @@ func TestEncodeBlock(t *testing.T) {
 	if err != nil {
 		t.Fatalf("error when decoding block: %v", err)
 	}
-	fmt.Print(string(text))
+	t.Logf("%s", text)
 	if !block.Equal(restored) {
 		t.Fatalf("restored block not equals original block")
 	}
