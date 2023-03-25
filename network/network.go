@@ -46,13 +46,13 @@ func Launch(address string, remotes []Remote) {
 		log.Panic(err)
 	}
 	defer conn.Close()
-	log.Info("socket initialised")
+	log.Info("socket ", addr, " initialised")
 	var mesh = mesh.NewForkMesh()
 	var node = node.NewNode(mesh)
 	mesh.Mentor = node
 	var link = newNetworkLink()
 	var fork = protocol.NewRemoteFork(mesh, link)
-	log.Info("starting listener")
+	log.Info("starting listen on ", addr)
 	go runRemoteListener(conn, fork)
 	for _, v := range remotes {
 		var link = newNetworkLink()
@@ -60,7 +60,7 @@ func Launch(address string, remotes []Remote) {
 		log.Info("starting sender on port ", v.Address)
 		go runRemoteSender(conn, v, fork)
 	}
-	log.Info("starting node")
+	log.Info("starting node on ", addr)
 	runNode(node)
 }
 
@@ -78,7 +78,7 @@ func runRemoteSender(conn *net.UDPConn, remote Remote, fork *protocol.RemoteFork
 	}
 	go func() {
 		for msg := range fork.Link.SendChannel() {
-			log.Info(fmt.Sprintf("sending message to %s of length %d bytes", addr, len(msg)))
+			log.Info(fmt.Sprintf("%s sending message to %s of length %d bytes", conn.LocalAddr(), addr, len(msg)))
 			log.Info(string(msg))
 			conn.WriteToUDP(msg, addr)
 		}
@@ -101,7 +101,7 @@ func runRemoteListener(conn *net.UDPConn, fork *protocol.RemoteFork) {
 			if err != nil {
 				continue
 			}
-			log.Info(fmt.Sprintf("received message from %s of length %d bytes", rem, rlen))
+			log.Info(fmt.Sprintf("%s received message from %s of length %d bytes", conn.LocalAddr(), rem, rlen))
 			fork.Link.RecvChannel() <- buf[:rlen]
 		}
 	}()
