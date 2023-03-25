@@ -1,7 +1,6 @@
 package network
 
 import (
-	"fmt"
 	"net"
 	"slava0135/blockchan/blockgen"
 	"slava0135/blockchan/mesh"
@@ -34,16 +33,25 @@ func newNetworkLink() *NetworkLink {
 }
 
 func Launch(address string, remotes []Remote) {
+	addr, err := net.ResolveUDPAddr("udp", address)
+	if err != nil {
+		panic(err)
+	}
+	conn, err := net.ListenUDP("udp", addr)
+	if err != nil {
+		panic(err)
+	}
+	defer conn.Close()
 	var mesh = mesh.NewForkMesh()
 	var node = node.NewNode(mesh)
 	mesh.Mentor = node
 	var link = newNetworkLink()
 	var fork = protocol.NewRemoteFork(mesh, link)
-	go runRemoteListener(address, fork)
+	go runRemoteListener(conn, fork)
 	for _, v := range remotes {
 		var link = newNetworkLink()
 		var fork = protocol.NewRemoteFork(mesh, link)
-		go runRemoteSender(v, fork)
+		go runRemoteSender(conn, v, fork)
 	}
 	go runNode(node)
 }
@@ -55,34 +63,37 @@ func runNode(node *node.Node) {
 	}
 }
 
-func runRemoteSender(remote Remote, fork *protocol.RemoteFork) {
+func runRemoteSender(conn *net.UDPConn, remote Remote, fork *protocol.RemoteFork) {
+	addr, err := net.ResolveUDPAddr("udp", remote.Address)
+	if err != nil {
+		panic(err)
+	}
 	go func() {
-		for {
-			fork.Listen(nil)
+		for msg := range fork.Link.SendChannel() {
+			conn.WriteToUDP(msg, addr)
 		}
 	}()
+	for {
+		fork.Listen(nil)
+	}
 }
 
-func runRemoteListener(address string, fork *protocol.RemoteFork) {
-	addr, err := net.ResolveUDPAddr("udp", address)
-	if err != nil {
-		panic(fmt.Errorf("could not resolve adress for listener: %v", err))
-	}
-	conn, err := net.ListenUDP("udp", addr)
-	if err != nil {
-		panic(fmt.Errorf("could not listen on address %v: %v", addr, err))
-	}
+func runRemoteListener(conn *net.UDPConn, fork *protocol.RemoteFork) {
 	go func() {
 		for range fork.Link.SendChannel() {
 		}
 	}()
-	defer conn.Close()
-	var buf [1024]byte
-	for {
-		rlen, _, err := conn.ReadFromUDP(buf[:])
-		if err != nil {
-			continue
+	go func() {
+		var buf [1024]byte
+		for {
+			rlen, _, err := conn.ReadFromUDP(buf[:])
+			if err != nil {
+				continue
+			}
+			fork.Link.RecvChannel() <- buf[:rlen]
 		}
-		fork.Link.RecvChannel() <- buf[:rlen]
+	}()
+	for {
+		fork.Listen(nil)
 	}
 }
