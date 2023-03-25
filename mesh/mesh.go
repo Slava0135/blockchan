@@ -4,6 +4,7 @@ import (
 	"slava0135/blockchan/blockgen"
 	"slava0135/blockchan/node"
 	"slava0135/blockchan/validate"
+	log "github.com/sirupsen/logrus"
 )
 
 type ForkMesh struct {
@@ -71,7 +72,8 @@ func (m *ForkMesh) ReceiveChan(f node.Fork) chan blockgen.Block {
 			return ch
 		}
 	}
-	panic("node not connected to mesh tried to get receive channel")
+	log.Panic("node not connected to mesh tried to get receive channel")
+	panic("")
 }
 
 func (m *ForkMesh) Connect(f node.Fork) {

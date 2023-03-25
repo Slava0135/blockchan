@@ -1,9 +1,16 @@
 package node
 
 import (
+	"io"
 	"slava0135/blockchan/blockgen"
 	"testing"
+
+	log "github.com/sirupsen/logrus"
 )
+
+func TestMain(m *testing.M) {
+	log.SetOutput(io.Discard)
+}
 
 type testMesh struct {
 	existingBlocks      []blockgen.Block

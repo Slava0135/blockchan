@@ -39,11 +39,11 @@ func newNetworkLink() *NetworkLink {
 func Launch(address string, remotes []Remote) {
 	addr, err := net.ResolveUDPAddr("udp", address)
 	if err != nil {
-		log.Fatal(err)
+		log.Panic(err)
 	}
 	conn, err := net.ListenUDP("udp", addr)
 	if err != nil {
-		log.Fatal(err)
+		log.Panic(err)
 	}
 	defer conn.Close()
 	log.Info("socket initialised")
@@ -74,7 +74,7 @@ func runNode(node *node.Node) {
 func runRemoteSender(conn *net.UDPConn, remote Remote, fork *protocol.RemoteFork) {
 	addr, err := net.ResolveUDPAddr("udp", remote.Address)
 	if err != nil {
-		log.Fatal(err)
+		log.Panic(err)
 	}
 	go func() {
 		for msg := range fork.Link.SendChannel() {
