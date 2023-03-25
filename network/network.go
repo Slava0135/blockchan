@@ -1,6 +1,7 @@
 package network
 
 import (
+	"fmt"
 	"net"
 	"slava0135/blockchan/blockgen"
 	"slava0135/blockchan/mesh"
@@ -60,7 +61,7 @@ func Launch(address string, remotes []Remote) {
 		go runRemoteSender(conn, v, fork)
 	}
 	log.Info("starting node")
-	go runNode(node)
+	runNode(node)
 }
 
 func runNode(node *node.Node) {
@@ -77,7 +78,8 @@ func runRemoteSender(conn *net.UDPConn, remote Remote, fork *protocol.RemoteFork
 	}
 	go func() {
 		for msg := range fork.Link.SendChannel() {
-			log.Info("sending message to ", addr)
+			log.Info(fmt.Sprintf("sending message to %s of length %d bytes", addr, len(msg)))
+			log.Info(string(msg))
 			conn.WriteToUDP(msg, addr)
 		}
 	}()
@@ -96,10 +98,10 @@ func runRemoteListener(conn *net.UDPConn, fork *protocol.RemoteFork) {
 		for {
 			time.Sleep(time.Duration(100) * time.Millisecond)
 			rlen, rem, err := conn.ReadFromUDP(buf[:])
-			log.Info("received message from", rem)
 			if err != nil {
 				continue
 			}
+			log.Info(fmt.Sprintf("received message from %s of length %d bytes", rem, rlen))
 			fork.Link.RecvChannel() <- buf[:rlen]
 		}
 	}()
