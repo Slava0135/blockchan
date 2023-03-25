@@ -6,6 +6,9 @@ import (
 	"slava0135/blockchan/mesh"
 	"slava0135/blockchan/node"
 	"slava0135/blockchan/protocol"
+	"time"
+
+	log "github.com/sirupsen/logrus"
 )
 
 type NetworkLink struct {
@@ -35,24 +38,28 @@ func newNetworkLink() *NetworkLink {
 func Launch(address string, remotes []Remote) {
 	addr, err := net.ResolveUDPAddr("udp", address)
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 	conn, err := net.ListenUDP("udp", addr)
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 	defer conn.Close()
+	log.Info("socket initialised")
 	var mesh = mesh.NewForkMesh()
 	var node = node.NewNode(mesh)
 	mesh.Mentor = node
 	var link = newNetworkLink()
 	var fork = protocol.NewRemoteFork(mesh, link)
+	log.Info("starting listener")
 	go runRemoteListener(conn, fork)
 	for _, v := range remotes {
 		var link = newNetworkLink()
 		var fork = protocol.NewRemoteFork(mesh, link)
+		log.Info("starting sender on port ", v.Address)
 		go runRemoteSender(conn, v, fork)
 	}
+	log.Info("starting node")
 	go runNode(node)
 }
 
@@ -66,10 +73,11 @@ func runNode(node *node.Node) {
 func runRemoteSender(conn *net.UDPConn, remote Remote, fork *protocol.RemoteFork) {
 	addr, err := net.ResolveUDPAddr("udp", remote.Address)
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 	go func() {
 		for msg := range fork.Link.SendChannel() {
+			log.Info("sending message to ", addr)
 			conn.WriteToUDP(msg, addr)
 		}
 	}()
@@ -86,7 +94,9 @@ func runRemoteListener(conn *net.UDPConn, fork *protocol.RemoteFork) {
 	go func() {
 		var buf [1024]byte
 		for {
-			rlen, _, err := conn.ReadFromUDP(buf[:])
+			time.Sleep(time.Duration(100) * time.Millisecond)
+			rlen, rem, err := conn.ReadFromUDP(buf[:])
+			log.Info("received message from", rem)
 			if err != nil {
 				continue
 			}
