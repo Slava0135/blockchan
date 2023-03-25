@@ -8,7 +8,7 @@ import (
 )
 
 type RemoteFork struct {
-	link Link
+	Link Link
 	mesh node.Mesh
 }
 
@@ -19,18 +19,18 @@ type Link interface {
 
 func NewRemoteFork(mesh *mesh.ForkMesh, link Link) *RemoteFork {
 	var f = &RemoteFork{}
-	f.link = link
+	f.Link = link
 	f.mesh = mesh
 	return f
 }
 
 func (f *RemoteFork) Blocks(index blockgen.Index) []blockgen.Block {
 	go func() {
-		f.link.SendChannel() <- messages.PackMessage(messages.AskForBlocksMsg{Index: uint64(index)})
+		f.Link.SendChannel() <- messages.PackMessage(messages.AskForBlocksMsg{Index: uint64(index)})
 	}()
 	var chain = make(map[blockgen.Index]blockgen.Block)
 	var expectedLen uint64 = 0
-	for msg := range f.link.RecvChannel() {
+	for msg := range f.Link.RecvChannel() {
 		var got = messages.UnpackMessage(msg)
 		var b, ok = got.(messages.SendBlockMsg)
 		if ok && b.Block.Index >= index {
@@ -52,7 +52,7 @@ func (f *RemoteFork) Blocks(index blockgen.Index) []blockgen.Block {
 }
 
 func (f *RemoteFork) sendBlock(b blockgen.Block, lastBlockIndex blockgen.Index) {
-	f.link.SendChannel() <- messages.PackMessage(messages.SendBlockMsg{Block: b, LastBlockIndex: uint64(lastBlockIndex)})
+	f.Link.SendChannel() <- messages.PackMessage(messages.SendBlockMsg{Block: b, LastBlockIndex: uint64(lastBlockIndex)})
 }
 
 func (f *RemoteFork) Listen(shutdown chan struct{}) {
@@ -64,7 +64,7 @@ func (f *RemoteFork) Listen(shutdown chan struct{}) {
 			return
 		case b := <-f.mesh.ReceiveChan(f):
 			go f.sendBlock(b, b.Index)
-		case msg := <-f.link.RecvChannel():
+		case msg := <-f.Link.RecvChannel():
 			var i = messages.UnpackMessage(msg)
 			switch v := i.(type) {
 			case messages.SendBlockMsg:
