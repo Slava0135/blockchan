@@ -5,6 +5,7 @@ import (
 	"slava0135/blockchan/mesh"
 	"slava0135/blockchan/messages"
 	"slava0135/blockchan/node"
+	"time"
 )
 
 type RemoteFork struct {
@@ -32,7 +33,7 @@ func NewRemoteFork(mesh *mesh.ForkMesh, link Link, mentor node.Fork) *RemoteFork
 
 func (f *RemoteFork) Blocks(index blockgen.Index) []blockgen.Block {
 	f.blocksReq <- index
-	chain := <- f.blocksAns
+	chain := <-f.blocksAns
 	return chain
 }
 
@@ -63,23 +64,36 @@ func (f *RemoteFork) Listen(shutdown chan struct{}) {
 				}
 			}
 		case index := <-f.blocksReq:
-			f.Link.SendChannel() <- messages.PackMessage(messages.AskForBlocksMsg{Index: uint64(index)})
+			go func() {
+				f.Link.SendChannel() <- messages.PackMessage(messages.AskForBlocksMsg{Index: uint64(index)})
+			}()
+			timeout := make(chan bool, 1)
+			go func() {
+				time.Sleep(10 * time.Millisecond)
+				timeout <- true
+			}()
 			var chain = make(map[blockgen.Index]blockgen.Block)
 			var expectedLen uint64 = 0
-			for msg := range f.Link.RecvChannel() {
-				var got = messages.UnpackMessage(msg)
-				var b, ok = got.(messages.SendBlockMsg)
-				if ok && b.Block.Index >= index {
-					chain[b.Block.Index] = b.Block
-					var newLen = b.LastBlockIndex - uint64(index) + 1
-					if newLen > expectedLen {
-						expectedLen = newLen
+			for {
+				select {
+				case msg := <-f.Link.RecvChannel():
+					var got = messages.UnpackMessage(msg)
+					var b, ok = got.(messages.SendBlockMsg)
+					if ok && b.Block.Index >= index {
+						chain[b.Block.Index] = b.Block
+						var newLen = b.LastBlockIndex - uint64(index) + 1
+						if newLen > expectedLen {
+							expectedLen = newLen
+						}
+						if len(chain) >= int(expectedLen) {
+							goto ret
+						}
 					}
-					if len(chain) >= int(expectedLen) {
-						break
-					}
+				case <-timeout:
+					goto ret
 				}
 			}
+		ret:
 			var sortedChain = make([]blockgen.Block, len(chain))
 			for _, b := range chain {
 				sortedChain[b.Index-index] = b

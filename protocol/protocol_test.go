@@ -213,3 +213,11 @@ func TestListen_AskForBlocks_NoBlocks(t *testing.T) {
 	link.recvChan <- messages.PackMessage(messages.AskForBlocksMsg{Index: 0})
 	time.Sleep(time.Second)
 }
+
+func TestBlocks_Timeout(t *testing.T) {
+	var link = newTestLink()
+	var mesh = mesh.NewForkMesh()
+	var remote = NewRemoteFork(mesh, link, nil)
+	go remote.Listen(nil)
+	remote.Blocks(0)
+}
