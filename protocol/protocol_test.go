@@ -44,7 +44,7 @@ func TestListen_SendBlock(t *testing.T) {
 	var block = blockgen.GenerateNextFrom(blockgen.GenerateGenesisBlock(), blockgen.Data{1, 2, 3}, nil)
 	go remote.Listen(nil)
 	time.Sleep(time.Second)
-	go mesh.SendBlock(nil, block)
+	go mesh.SendBlockBroadcast(nil, block)
 	var unpacked = messages.UnpackMessage(<-link.sendChan)
 	var received, ok = unpacked.(messages.SendBlockMsg)
 	if !ok {

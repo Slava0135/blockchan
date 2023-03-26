@@ -25,7 +25,7 @@ func (mesh *testMesh) AllExistingBlocks(from blockgen.Index) []blockgen.Block {
 	return mesh.existingBlocks[from:]
 }
 
-func (mesh *testMesh) SendBlock(f Fork, b blockgen.Block) bool {
+func (mesh *testMesh) SendBlockBroadcast(f Fork, b blockgen.Block) bool {
 	mesh.receivedBlocks = append(mesh.receivedBlocks, b)
 	return true
 }

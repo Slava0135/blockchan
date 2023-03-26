@@ -68,7 +68,7 @@ func (f *RemoteFork) Listen(shutdown chan struct{}) {
 			var i = messages.UnpackMessage(msg)
 			switch v := i.(type) {
 			case messages.SendBlockMsg:
-				f.mesh.SendBlock(f, v.Block)
+				f.mesh.SendBlockBroadcast(f, v.Block)
 			case messages.AskForBlocksMsg:
 				if f.mesh.MentorFork() == nil {
 					continue

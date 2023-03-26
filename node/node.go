@@ -3,6 +3,7 @@ package node
 import (
 	"slava0135/blockchan/blockgen"
 	"slava0135/blockchan/validate"
+
 	log "github.com/sirupsen/logrus"
 )
 
@@ -16,7 +17,7 @@ type Node struct {
 
 type Mesh interface {
 	AllExistingBlocks(from blockgen.Index) []blockgen.Block
-	SendBlock(from Fork, b blockgen.Block) bool
+	SendBlockBroadcast(from Fork, b blockgen.Block) bool
 	ReceiveChan(Fork) chan blockgen.Block
 	Connect(Fork)
 	Disconnect(Fork)
@@ -46,7 +47,7 @@ func (n *Node) Enable() {
 	n.blocks = n.Mesh.AllExistingBlocks(0)
 	if len(n.blocks) == 0 {
 		n.blocks = append(n.blocks, blockgen.GenerateGenesisBlock())
-		n.Mesh.SendBlock(n, n.blocks[0])
+		n.Mesh.SendBlockBroadcast(n, n.blocks[0])
 	}
 	n.Enabled = true
 	n.Mesh.Connect(n)
@@ -91,7 +92,7 @@ func (n *Node) ProcessNextBlock(data blockgen.Data) {
 		case b := <-nextBlock:
 			log.Info("generated next block ", b)
 			n.blocks = append(n.blocks, b)
-			n.Mesh.SendBlock(n, b)
+			n.Mesh.SendBlockBroadcast(n, b)
 			return
 		}
 	}

@@ -54,7 +54,7 @@ func (m *ForkMesh) AllExistingBlocks(from blockgen.Index) []blockgen.Block {
 	return chains[majorFork]
 }
 
-func (m *ForkMesh) SendBlock(from node.Fork, b blockgen.Block) bool {
+func (m *ForkMesh) SendBlockBroadcast(from node.Fork, b blockgen.Block) bool {
 	if !b.HasValidHash() {
 		return false
 	}
