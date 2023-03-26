@@ -70,9 +70,9 @@ func Launch(name string, address string, remotes []Remote, genesis bool) {
 			}
 			if f, ok := forks[rem.String()]; ok {
 				log.Infof("%s received message from %s of length %d bytes", conn.LocalAddr(), rem, rlen)
-				var msg []byte
+				var msg = make([]byte, rlen)
 				copy(msg, buf[:rlen])
-				f.Link.RecvChannel() <- buf[:rlen]
+				f.Link.RecvChannel() <- msg
 			}
 		}
 	}
