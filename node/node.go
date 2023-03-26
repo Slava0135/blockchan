@@ -17,7 +17,7 @@ type Node struct {
 }
 
 type Mesh interface {
-	AllExistingBlocks(from blockgen.Index) []blockgen.Block
+	NeighbourBlocks(from blockgen.Index) []blockgen.Block
 	SendBlockBroadcast(from Fork, b blockgen.Block) bool
 	SendBlockTo(to Fork, b blockgen.Block) bool
 	ReceiveChan(Fork) chan blockgen.Block
@@ -54,7 +54,8 @@ func (n *Node) Enable(genesis bool) {
 		n.blocks = append(n.blocks, blockgen.GenerateGenesisBlock())
 		n.Mesh.SendBlockBroadcast(n, n.blocks[0])
 	} else {
-		n.blocks = n.Mesh.AllExistingBlocks(0)
+		log.Info("starting node asks for neighbours blocks")
+		n.blocks = n.Mesh.NeighbourBlocks(0)
 	}
 	n.Enabled = true
 }
@@ -86,9 +87,9 @@ func (n *Node) ProcessNextBlock(data blockgen.Data) {
 				chain = append(chain, n.blocks...)
 				chain = append(chain, b)
 			} else {
-				log.Info("node asks for all existing blocks")
+				log.Info("node asks for missing neighbours blocks")
 				chain = append(chain, n.blocks[:n.Verified+1]...)
-				chain = append(chain, n.Mesh.AllExistingBlocks(n.Verified+1)...)
+				chain = append(chain, n.Mesh.NeighbourBlocks(n.Verified+1)...)
 			}
 			if validate.IsValidChain(chain) {
 				log.Info("node accepted new chain")
