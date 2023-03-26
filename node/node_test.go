@@ -60,7 +60,7 @@ func testData() blockgen.Data {
 func TestNodeStart_GetBlocks(t *testing.T) {
 	var mesh = newTestMesh()
 	var node = NewNode(&mesh)
-	node.Enable()
+	node.Enable(false)
 	node.ProcessNextBlock(blockgen.Data{})
 	node.ProcessNextBlock(blockgen.Data{})
 	node.Disable()
@@ -80,7 +80,7 @@ func TestNodeStart_GetBlocks(t *testing.T) {
 func TestNodeStart_Genesis(t *testing.T) {
 	var mesh = testMesh{}
 	var node = NewNode(&mesh)
-	node.Enable()
+	node.Enable(true)
 	if len(node.Blocks(0)) == 0 {
 		t.Fatalf("node did not generate genesis block")
 	}
@@ -92,7 +92,7 @@ func TestNodeStart_Genesis(t *testing.T) {
 func TestNodeDisable(t *testing.T) {
 	var mesh = testMesh{}
 	var node = NewNode(&mesh)
-	node.Enable()
+	node.Enable(true)
 	if !node.Enabled {
 		t.Fatalf("node is not running after start")
 	}
@@ -106,8 +106,8 @@ func TestNodeEnable_AlreadyEnabled(t *testing.T) {
 	var mesh = testMesh{}
 	var node = NewNode(&mesh)
 	defer func() { _ = recover() }()
-	node.Enable()
-	node.Enable()
+	node.Enable(true)
+	node.Enable(true)
 	t.Fatalf("should have panicked because node was already processing next block")
 }
 
@@ -115,7 +115,7 @@ func TestNodeDisable_AlreadyDisabled(t *testing.T) {
 	var mesh = testMesh{}
 	var node = NewNode(&mesh)
 	defer func() { _ = recover() }()
-	node.Enable()
+	node.Enable(true)
 	node.Disable()
 	node.Disable()
 	t.Fatalf("should have panicked because node was already disabled")
@@ -124,7 +124,7 @@ func TestNodeDisable_AlreadyDisabled(t *testing.T) {
 func TestNodeRun_SendBlocks(t *testing.T) {
 	var mesh = testMesh{}
 	var node = NewNode(&mesh)
-	node.Enable()
+	node.Enable(true)
 	node.ProcessNextBlock(blockgen.Data{})
 	node.ProcessNextBlock(blockgen.Data{})
 	node.ProcessNextBlock(blockgen.Data{})
@@ -148,10 +148,10 @@ func TestNodeProcessNextBlock_AcceptReceivedBlock(t *testing.T) {
 	var data = testData()
 	var last = mesh.existingBlocks[len(mesh.existingBlocks)-1]
 	var next = blockgen.GenerateNextFrom(last, data, nil)
-	node.Enable()
+	node.Enable(false)
 	go func() { mesh.chanToNode <- next }()
 	node.ProcessNextBlock(blockgen.Data{})
-	if node.Blocks(0)[next.Index].Data != data {
+	if len(node.Blocks(0)) <= int(next.Index) || node.Blocks(0)[next.Index].Data != data {
 		t.Fatalf("node did not accept valid received block")
 	}
 }
@@ -163,7 +163,7 @@ func TestNodeProcessNextBlock_RejectReceivedBlock(t *testing.T) {
 	var last = mesh.existingBlocks[len(mesh.existingBlocks)-1]
 	var next = blockgen.GenerateNextFrom(last, data, nil)
 	next.Hash = []byte{}
-	node.Enable()
+	node.Enable(true)
 	go func() { mesh.chanToNode <- next }()
 	node.ProcessNextBlock(blockgen.Data{})
 	if blockgen.Index(len(node.Blocks(0))) > next.Index && node.Blocks(0)[next.Index].Data == data {
@@ -178,7 +178,7 @@ func TestNodeProcessNextBlock_AcceptMissedBlock(t *testing.T) {
 	var last = mesh.existingBlocks[len(mesh.existingBlocks)-1]
 	var next = blockgen.GenerateNextFrom(last, data, nil)
 	var nextnext = blockgen.GenerateNextFrom(next, data, nil)
-	node.Enable()
+	node.Enable(false)
 	mesh.existingBlocks = append(mesh.existingBlocks, next, nextnext)
 	go func() { mesh.chanToNode <- nextnext }()
 	node.ProcessNextBlock(blockgen.Data{})
@@ -198,11 +198,11 @@ func TestNodeProcessNextBlock_IgnoreOldBlock(t *testing.T) {
 	var node = NewNode(&mesh)
 	var data = testData()
 	var old = blockgen.GenerateNextFrom(mesh.existingBlocks[0], data, nil)
-	node.Enable()
+	node.Enable(false)
 	go func() { mesh.chanToNode <- old }()
 	node.ProcessNextBlock(blockgen.Data{})
 	if node.Blocks(0)[old.Index].Data == data {
-		t.Fatalf("node accepted received old block")
+		t.Fatalf("node accepted old block")
 	}
 }
 
@@ -212,7 +212,7 @@ func TestNode_Connection(t *testing.T) {
 	if !mesh.connected {
 		t.Fatalf("node did not connect to mesh when created")
 	}
-	node.Enable()
+	node.Enable(true)
 	node.Disable()
 	if !mesh.connected {
 		t.Fatalf("node disconnected from mesh when was disabled")
@@ -222,7 +222,7 @@ func TestNode_Connection(t *testing.T) {
 func TestNodeProcessNextBlock_DoubleProcess(t *testing.T) {
 	var mesh = newTestMesh()
 	var node = NewNode(&mesh)
-	node.Enable()
+	node.Enable(true)
 	var success = new(bool)
 	go func() {
 		defer func() { _ = recover() }()

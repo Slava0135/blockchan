@@ -41,15 +41,16 @@ func NewNode(mesh Mesh) *Node {
 	return node
 }
 
-func (n *Node) Enable() {
+func (n *Node) Enable(genesis bool) {
 	if n.Enabled {
 		log.Panic("node was already enabled!")
 	}
-	n.blocks = n.Mesh.AllExistingBlocks(0)
-	if len(n.blocks) == 0 {
+	if genesis {
 		log.Info("node generated genesis block")
 		n.blocks = append(n.blocks, blockgen.GenerateGenesisBlock())
 		n.Mesh.SendBlockBroadcast(n, n.blocks[0])
+	} else {
+		n.blocks = n.Mesh.AllExistingBlocks(0)
 	}
 	n.Enabled = true
 }

@@ -9,8 +9,8 @@ import (
 	"time"
 )
 
-func runNode(node *node.Node, data blockgen.Data, stop *bool) {
-	node.Enable()
+func runNode(node *node.Node, data blockgen.Data, stop *bool, genesis bool) {
+	node.Enable(genesis)
 	for !*stop {
 		node.ProcessNextBlock(data)
 	}
@@ -30,8 +30,9 @@ func TestMeshAndTwoNodes(t *testing.T) {
 	var node1 = node.NewNode(mesh)
 	var node2 = node.NewNode(mesh)
 	var stop = false
-	go runNode(node1, nodeData(0x11), &stop)
-	go runNode(node2, nodeData(0x22), &stop)
+	go runNode(node1, nodeData(0x11), &stop, true)
+	time.Sleep(10 * time.Millisecond)
+	go runNode(node2, nodeData(0x22), &stop, false)
 	time.Sleep(time.Second)
 	stop = true
 	if !validate.AreEqualChains(node1.Blocks(0), node2.Blocks(0)) {
@@ -49,10 +50,11 @@ func TestMeshAndThreeNodes(t *testing.T) {
 	var node2 = node.NewNode(mesh)
 	var node3 = node.NewNode(mesh)
 	var stop = false
-	go runNode(node1, nodeData(0x11), &stop)
-	go runNode(node2, nodeData(0x22), &stop)
-	go runNode(node3, nodeData(0x33), &stop)
-	time.Sleep(time.Second)
+	go runNode(node1, nodeData(0x11), &stop, true)
+	time.Sleep(10 * time.Millisecond)
+	go runNode(node2, nodeData(0x22), &stop, false)
+	go runNode(node3, nodeData(0x33), &stop, false)
+	time.Sleep(3 * time.Second)
 	stop = true
 	if !validate.AreEqualChains(node1.Blocks(0), node2.Blocks(0)) || !validate.AreEqualChains(node2.Blocks(0), node3.Blocks(0)) {
 		t.Fatalf("chains diverged")
