@@ -87,19 +87,26 @@ func (n *Node) ProcessNextBlock(data blockgen.Data) {
 				log.Infof("node %s tries to append block", n.Name)
 				chain = append(chain, n.blocks...)
 				chain = append(chain, b)
+				if validate.IsValidChain(chain) {
+					n.blocks = append(n.blocks, b)
+					log.Infof("node %s verified block with index %d", n.Name, b.Index)
+					n.Verified = b.Index
+					return
+				} else {
+					log.Warnf("node %s rejected block with %s", n.Name, b)
+				}
 			} else {
 				log.Infof("node %s asks for missing neighbours blocks", n.Name)
 				chain = append(chain, n.blocks[:n.Verified+1]...)
 				chain = append(chain, n.Mesh.NeighbourBlocks(n.Verified+1)...)
+				if validate.IsValidChain(chain) {
+					log.Infof("node %s accepted new chain", n.Name)
+					n.blocks = chain
+					return
+				} else {
+					log.Warnf("node %s rejected new chain, last verified block: %d", n.Name, n.Verified)
+				}
 			}
-			if validate.IsValidChain(chain) {
-				log.Infof("node %s accepted new chain", n.Name)
-				n.blocks = chain
-				n.Verified = n.blocks[len(n.blocks)-1].Index
-				log.Infof("node %s verified block with index %d", n.Name, n.Verified)
-				return
-			}
-			log.Warnf("node %s rejected new chain", n.Name)
 		case b := <-nextBlock:
 			log.Infof("node %s generated next block %s", n.Name, b)
 			n.blocks = append(n.blocks, b)
