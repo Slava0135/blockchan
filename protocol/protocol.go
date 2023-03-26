@@ -54,6 +54,9 @@ func (f *RemoteFork) Listen(shutdown chan struct{}) {
 				f.mesh.SendBlockTo(f.mentor, v.Block)
 			case messages.AskForBlocksMsg:
 				var chain = f.mentor.Blocks(blockgen.Index(v.Index))
+				if len(chain) == 0 {
+					continue
+				}
 				var lastIndex = chain[len(chain)-1].Index
 				for _, b := range chain {
 					f.Link.SendChannel() <- messages.PackMessage(messages.SendBlockMsg{Block: b, LastBlockIndex: uint64(lastIndex)})

@@ -202,3 +202,14 @@ func TestListen_SendBlockOnlyToMentor(t *testing.T) {
 		t.Fatalf("block was sent to unwanted fork")
 	}
 }
+
+func TestListen_AskForBlocks_NoBlocks(t *testing.T) {
+	var mesh = mesh.NewForkMesh()
+	var mentor = &testFork{}
+	mesh.Connect(mentor)
+	var link = newTestLink()
+	var remote = NewRemoteFork(mesh, link, mentor)
+	go remote.Listen(nil)
+	link.recvChan <- messages.PackMessage(messages.AskForBlocksMsg{Index: 0})
+	time.Sleep(time.Second)
+}
