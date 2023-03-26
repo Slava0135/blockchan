@@ -151,7 +151,7 @@ func TestNodeProcessNextBlock_AcceptReceivedBlock(t *testing.T) {
 	node.Enable(false)
 	go func() { mesh.chanToNode <- next }()
 	node.ProcessNextBlock(blockgen.Data{})
-	if len(node.Blocks(0)) <= int(next.Index) || node.Blocks(0)[next.Index].Data != data {
+	if node.Verified != next.Index || node.Blocks(0)[next.Index].Data != data {
 		t.Fatalf("node did not accept valid received block")
 	}
 }
@@ -166,7 +166,7 @@ func TestNodeProcessNextBlock_RejectReceivedBlock(t *testing.T) {
 	node.Enable(true)
 	go func() { mesh.chanToNode <- next }()
 	node.ProcessNextBlock(blockgen.Data{})
-	if blockgen.Index(len(node.Blocks(0))) > next.Index && node.Blocks(0)[next.Index].Data == data {
+	if node.Verified == next.Index {
 		t.Fatalf("node accepted invalid received block")
 	}
 }
@@ -190,6 +190,9 @@ func TestNodeProcessNextBlock_AcceptMissedBlock(t *testing.T) {
 	}
 	if node.Blocks(0)[nextnext.Index].Data != data {
 		t.Fatalf("node did not saved received block")
+	}
+	if node.Verified != nextnext.Index {
+		t.Fatalf("node did not verified blocks")
 	}
 }
 

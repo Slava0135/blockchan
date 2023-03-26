@@ -10,6 +10,7 @@ import (
 type Node struct {
 	Mesh      Mesh
 	Enabled   bool
+	Verified  blockgen.Index
 	blocks    []blockgen.Block
 	shutdown  chan struct{}
 	inProcess *bool
@@ -75,23 +76,24 @@ func (n *Node) ProcessNextBlock(data blockgen.Data) {
 		case b := <-n.Mesh.ReceiveChan(n):
 			log.Info("node received block ", b)
 			var lastThis = n.blocks[len(n.blocks)-1].Index
-			var lastOther = b.Index
-			if lastThis > lastOther {
+			if n.Verified >= b.Index {
 				log.Info("node ignores old block")
 				continue
 			}
 			var chain []blockgen.Block
-			chain = append(chain, n.blocks...)
-			if lastThis+1 == lastOther {
+			if lastThis+1 == b.Index {
 				log.Info("node tries to append block")
+				chain = append(chain, n.blocks...)
 				chain = append(chain, b)
 			} else {
 				log.Info("node asks for all existing blocks")
-				chain = append(chain, n.Mesh.AllExistingBlocks(lastThis+1)...)
+				chain = append(chain, n.blocks[:n.Verified+1]...)
+				chain = append(chain, n.Mesh.AllExistingBlocks(n.Verified+1)...)
 			}
 			if validate.IsValidChain(chain) {
 				log.Info("node accepted new chain")
 				n.blocks = chain
+				n.Verified = n.blocks[len(n.blocks)-1].Index
 				return
 			}
 			log.Info("node rejected new chain")
