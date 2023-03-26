@@ -30,6 +30,10 @@ func (mesh *testMesh) SendBlockBroadcast(f Fork, b blockgen.Block) bool {
 	return true
 }
 
+func (mesh *testMesh) SendBlockTo(f Fork, b blockgen.Block) bool {
+	return true
+}
+
 func (mesh *testMesh) ReceiveChan(f Fork) chan blockgen.Block {
 	return mesh.chanToNode
 }
@@ -40,10 +44,6 @@ func (mesh *testMesh) Connect(f Fork) {
 
 func (mesh *testMesh) Disconnect(f Fork) {
 	mesh.connected = false
-}
-
-func (mesh *testMesh) MentorFork() Fork {
-	return nil
 }
 
 func newTestMesh() testMesh {

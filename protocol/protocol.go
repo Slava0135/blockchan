@@ -70,7 +70,7 @@ func (f *RemoteFork) Listen(shutdown chan struct{}) {
 			var i = messages.UnpackMessage(msg)
 			switch v := i.(type) {
 			case messages.SendBlockMsg:
-				f.mesh.SendBlockBroadcast(f, v.Block)
+				f.mesh.SendBlockTo(f.mentor, v.Block)
 			case messages.AskForBlocksMsg:
 				var blocks = f.mentor.Blocks(blockgen.Index(v.Index))
 				var lastIndex = blocks[len(blocks)-1].Index

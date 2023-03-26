@@ -169,3 +169,25 @@ func TestShutdown(t *testing.T) {
 	go remote.Listen(shut)
 	shut <- struct{}{}
 }
+
+func TestListen_SendBlockOnlyToMentor(t *testing.T) {
+	var mesh = mesh.NewForkMesh()
+	var mentor = &testFork{}
+	mesh.Connect(mentor)
+	var unwanted = &testFork{}
+	mesh.Connect(unwanted)
+	var link = newTestLink()
+	var remote = NewRemoteFork(mesh, link, mentor)
+	var block = blockgen.GenerateNextFrom(blockgen.GenerateGenesisBlock(), blockgen.Data{1, 2, 3}, nil)
+	go remote.Listen(nil)
+	link.recvChan <- messages.PackMessage(messages.SendBlockMsg{Block: block, LastBlockIndex: 0})
+	var _ = <-mesh.ReceiveChan(mentor)
+	var blockTo blockgen.Block
+	go func() {
+		blockTo = <-mesh.ReceiveChan(unwanted)
+	}()
+	time.Sleep(time.Second)
+	if block.Equal(blockTo) {
+		t.Fatalf("block was sent to unwanted fork")
+	}
+}

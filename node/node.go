@@ -18,6 +18,7 @@ type Node struct {
 type Mesh interface {
 	AllExistingBlocks(from blockgen.Index) []blockgen.Block
 	SendBlockBroadcast(from Fork, b blockgen.Block) bool
+	SendBlockTo(to Fork, b blockgen.Block) bool
 	ReceiveChan(Fork) chan blockgen.Block
 	Connect(Fork)
 	Disconnect(Fork)
