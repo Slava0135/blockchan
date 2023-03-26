@@ -192,9 +192,9 @@ func TestFrokMeshSendBlockTo(t *testing.T) {
 	}()
 	time.Sleep(time.Second)
 	if !block.Equal(blockTo) {
-		t.Fatalf("block was not sent to first fork")
+		t.Fatalf("block was not sent to wanted fork")
 	}
 	if block.Equal(blockFrom) {
-		t.Fatalf("block was sent to second fork")
+		t.Fatalf("block was sent to original fork")
 	}
 }
