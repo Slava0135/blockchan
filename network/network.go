@@ -49,14 +49,13 @@ func Launch(address string, remotes []Remote) {
 	log.Info("socket ", addr, " initialised")
 	var mesh = mesh.NewForkMesh()
 	var node = node.NewNode(mesh)
-	mesh.Mentor = node
 	var link = newNetworkLink()
-	var fork = protocol.NewRemoteFork(mesh, link)
+	var fork = protocol.NewRemoteFork(mesh, link, node)
 	log.Info("starting listen on ", addr)
 	go runRemoteListener(conn, fork)
 	for _, v := range remotes {
 		var link = newNetworkLink()
-		var fork = protocol.NewRemoteFork(mesh, link)
+		var fork = protocol.NewRemoteFork(mesh, link, node)
 		log.Info("starting sender on port ", v.Address)
 		go runRemoteSender(conn, v, fork)
 	}

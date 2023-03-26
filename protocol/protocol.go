@@ -8,8 +8,9 @@ import (
 )
 
 type RemoteFork struct {
-	Link Link
-	mesh node.Mesh
+	Link   Link
+	mesh   node.Mesh
+	mentor node.Fork
 }
 
 type Link interface {
@@ -17,10 +18,11 @@ type Link interface {
 	RecvChannel() chan []byte
 }
 
-func NewRemoteFork(mesh *mesh.ForkMesh, link Link) *RemoteFork {
+func NewRemoteFork(mesh *mesh.ForkMesh, link Link, mentor node.Fork) *RemoteFork {
 	var f = &RemoteFork{}
 	f.Link = link
 	f.mesh = mesh
+	f.mentor = mentor
 	return f
 }
 
@@ -70,10 +72,7 @@ func (f *RemoteFork) Listen(shutdown chan struct{}) {
 			case messages.SendBlockMsg:
 				f.mesh.SendBlockBroadcast(f, v.Block)
 			case messages.AskForBlocksMsg:
-				if f.mesh.MentorFork() == nil {
-					continue
-				}
-				var blocks = f.mesh.MentorFork().Blocks(blockgen.Index(v.Index))
+				var blocks = f.mentor.Blocks(blockgen.Index(v.Index))
 				var lastIndex = blocks[len(blocks)-1].Index
 				for _, b := range blocks {
 					f.sendBlock(b, lastIndex)

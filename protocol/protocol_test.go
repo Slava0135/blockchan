@@ -40,7 +40,7 @@ func (l *testLink) RecvChannel() chan []byte {
 func TestListen_SendBlock(t *testing.T) {
 	var link = newTestLink()
 	var mesh = mesh.NewForkMesh()
-	var remote = NewRemoteFork(mesh, link)
+	var remote = NewRemoteFork(mesh, link, nil)
 	var block = blockgen.GenerateNextFrom(blockgen.GenerateGenesisBlock(), blockgen.Data{1, 2, 3}, nil)
 	go remote.Listen(nil)
 	time.Sleep(time.Second)
@@ -58,7 +58,7 @@ func TestListen_SendBlock(t *testing.T) {
 func TestBlocks(t *testing.T) {
 	var link = newTestLink()
 	var mesh = mesh.NewForkMesh()
-	var remote = NewRemoteFork(mesh, link)
+	var remote = NewRemoteFork(mesh, link, nil)
 	var chain = []blockgen.Block{blockgen.GenerateGenesisBlock()}
 	for i := byte(0); i < 3; i += 1 {
 		chain = append(chain, blockgen.GenerateNextFrom(chain[i], blockgen.Data{}, nil))
@@ -78,7 +78,7 @@ func TestBlocks(t *testing.T) {
 func TestBlocks_Unsorted(t *testing.T) {
 	var link = newTestLink()
 	var mesh = mesh.NewForkMesh()
-	var remote = NewRemoteFork(mesh, link)
+	var remote = NewRemoteFork(mesh, link, nil)
 	var chain = []blockgen.Block{blockgen.GenerateGenesisBlock()}
 	for i := byte(0); i < 3; i += 1 {
 		chain = append(chain, blockgen.GenerateNextFrom(chain[i], blockgen.Data{}, nil))
@@ -99,7 +99,7 @@ func TestBlocks_Unsorted(t *testing.T) {
 func TestBlocks_DoubleSend(t *testing.T) {
 	var link = newTestLink()
 	var mesh = mesh.NewForkMesh()
-	var remote = NewRemoteFork(mesh, link)
+	var remote = NewRemoteFork(mesh, link, nil)
 	var chain = []blockgen.Block{blockgen.GenerateGenesisBlock()}
 	for i := byte(0); i < 3; i += 1 {
 		chain = append(chain, blockgen.GenerateNextFrom(chain[i], blockgen.Data{}, nil))
@@ -121,7 +121,7 @@ func TestBlocks_DoubleSend(t *testing.T) {
 func TestBlocks_OldBlock(t *testing.T) {
 	var link = newTestLink()
 	var mesh = mesh.NewForkMesh()
-	var remote = NewRemoteFork(mesh, link)
+	var remote = NewRemoteFork(mesh, link, nil)
 	var chain = []blockgen.Block{blockgen.GenerateGenesisBlock()}
 	for i := byte(0); i < 3; i += 1 {
 		chain = append(chain, blockgen.GenerateNextFrom(chain[i], blockgen.Data{}, nil))
@@ -142,7 +142,6 @@ func TestBlocks_OldBlock(t *testing.T) {
 func TestListen_AskedForBlocks(t *testing.T) {
 	var mesh = mesh.NewForkMesh()
 	var mentor = &testFork{}
-	mesh.Mentor = mentor
 	var chain = []blockgen.Block{blockgen.GenerateGenesisBlock()}
 	for i := byte(0); i < 3; i += 1 {
 		chain = append(chain, blockgen.GenerateNextFrom(chain[i], blockgen.Data{}, nil))
@@ -152,8 +151,8 @@ func TestListen_AskedForBlocks(t *testing.T) {
 	var linkReceiver = &testLink{}
 	linkReceiver.recvChan = linkSender.sendChan
 	linkReceiver.sendChan = linkSender.recvChan
-	var remoteSender = NewRemoteFork(mesh, linkSender)
-	var remoteReceiver = NewRemoteFork(mesh, linkReceiver)
+	var remoteSender = NewRemoteFork(mesh, linkSender, mentor)
+	var remoteReceiver = NewRemoteFork(mesh, linkReceiver, mentor)
 	go remoteSender.Listen(nil)
 	go remoteReceiver.Listen(nil)
 	var got = remoteReceiver.Blocks(0)

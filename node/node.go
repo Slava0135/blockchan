@@ -21,7 +21,6 @@ type Mesh interface {
 	ReceiveChan(Fork) chan blockgen.Block
 	Connect(Fork)
 	Disconnect(Fork)
-	MentorFork() Fork
 }
 
 type Fork interface {
