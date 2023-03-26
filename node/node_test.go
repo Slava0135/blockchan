@@ -1,16 +1,9 @@
 package node
 
 import (
-	"io"
 	"slava0135/blockchan/blockgen"
 	"testing"
-
-	log "github.com/sirupsen/logrus"
 )
-
-func TestMain(m *testing.M) {
-	log.SetOutput(io.Discard)
-}
 
 type testMesh struct {
 	existingBlocks      []blockgen.Block
@@ -156,9 +149,8 @@ func TestNodeProcessNextBlock_AcceptReceivedBlock(t *testing.T) {
 	var last = mesh.existingBlocks[len(mesh.existingBlocks)-1]
 	var next = blockgen.GenerateNextFrom(last, data, nil)
 	node.Enable()
-	go node.ProcessNextBlock(blockgen.Data{})
-	mesh.chanToNode <- next
-	node.Disable()
+	go func() { mesh.chanToNode <- next }()
+	node.ProcessNextBlock(blockgen.Data{})
 	if node.Blocks(0)[next.Index].Data != data {
 		t.Fatalf("node did not accept valid received block")
 	}
@@ -172,9 +164,8 @@ func TestNodeProcessNextBlock_RejectReceivedBlock(t *testing.T) {
 	var next = blockgen.GenerateNextFrom(last, data, nil)
 	next.Hash = []byte{}
 	node.Enable()
-	go node.ProcessNextBlock(blockgen.Data{})
-	mesh.chanToNode <- next
-	node.Disable()
+	go func() { mesh.chanToNode <- next }()
+	node.ProcessNextBlock(blockgen.Data{})
 	if blockgen.Index(len(node.Blocks(0))) > next.Index && node.Blocks(0)[next.Index].Data == data {
 		t.Fatalf("node accepted invalid received block")
 	}
@@ -188,10 +179,9 @@ func TestNodeProcessNextBlock_AcceptMissedBlock(t *testing.T) {
 	var next = blockgen.GenerateNextFrom(last, data, nil)
 	var nextnext = blockgen.GenerateNextFrom(next, data, nil)
 	node.Enable()
-	go node.ProcessNextBlock(blockgen.Data{})
 	mesh.existingBlocks = append(mesh.existingBlocks, next, nextnext)
-	mesh.chanToNode <- nextnext
-	node.Disable()
+	go func() { mesh.chanToNode <- nextnext }()
+	node.ProcessNextBlock(blockgen.Data{})
 	if mesh.timesAskedForBlocks < 2 {
 		t.Fatalf("node did not ask for blocks when it got block ahead")
 	}
@@ -209,9 +199,8 @@ func TestNodeProcessNextBlock_IgnoreOldBlock(t *testing.T) {
 	var data = testData()
 	var old = blockgen.GenerateNextFrom(mesh.existingBlocks[0], data, nil)
 	node.Enable()
-	go node.ProcessNextBlock(blockgen.Data{})
-	mesh.chanToNode <- old
-	node.Disable()
+	go func() { mesh.chanToNode <- old }()
+	node.ProcessNextBlock(blockgen.Data{})
 	if node.Blocks(0)[old.Index].Data == data {
 		t.Fatalf("node accepted received old block")
 	}
