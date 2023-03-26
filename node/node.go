@@ -96,6 +96,7 @@ func (n *Node) ProcessNextBlock(data blockgen.Data) {
 				log.Infof("node %s accepted new chain", n.Name)
 				n.blocks = chain
 				n.Verified = n.blocks[len(n.blocks)-1].Index
+				log.Infof("node %s verified block with index %d", n.Name, n.Verified)
 				return
 			}
 			log.Warnf("node %s rejected new chain", n.Name)
