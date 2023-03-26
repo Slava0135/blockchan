@@ -18,8 +18,12 @@ func (mesh *testMesh) AllExistingBlocks(from blockgen.Index) []blockgen.Block {
 	return mesh.existingBlocks[from:]
 }
 
-func (mesh *testMesh) SendBlock(f Fork, b blockgen.Block) bool {
+func (mesh *testMesh) SendBlockBroadcast(f Fork, b blockgen.Block) bool {
 	mesh.receivedBlocks = append(mesh.receivedBlocks, b)
+	return true
+}
+
+func (mesh *testMesh) SendBlockTo(f Fork, b blockgen.Block) bool {
 	return true
 }
 
@@ -33,10 +37,6 @@ func (mesh *testMesh) Connect(f Fork) {
 
 func (mesh *testMesh) Disconnect(f Fork) {
 	mesh.connected = false
-}
-
-func (mesh *testMesh) MentorFork() Fork {
-	return nil
 }
 
 func newTestMesh() testMesh {
@@ -149,9 +149,8 @@ func TestNodeProcessNextBlock_AcceptReceivedBlock(t *testing.T) {
 	var last = mesh.existingBlocks[len(mesh.existingBlocks)-1]
 	var next = blockgen.GenerateNextFrom(last, data, nil)
 	node.Enable()
-	go node.ProcessNextBlock(blockgen.Data{})
-	mesh.chanToNode <- next
-	node.Disable()
+	go func() { mesh.chanToNode <- next }()
+	node.ProcessNextBlock(blockgen.Data{})
 	if node.Blocks(0)[next.Index].Data != data {
 		t.Fatalf("node did not accept valid received block")
 	}
@@ -165,9 +164,8 @@ func TestNodeProcessNextBlock_RejectReceivedBlock(t *testing.T) {
 	var next = blockgen.GenerateNextFrom(last, data, nil)
 	next.Hash = []byte{}
 	node.Enable()
-	go node.ProcessNextBlock(blockgen.Data{})
-	mesh.chanToNode <- next
-	node.Disable()
+	go func() { mesh.chanToNode <- next }()
+	node.ProcessNextBlock(blockgen.Data{})
 	if blockgen.Index(len(node.Blocks(0))) > next.Index && node.Blocks(0)[next.Index].Data == data {
 		t.Fatalf("node accepted invalid received block")
 	}
@@ -181,10 +179,9 @@ func TestNodeProcessNextBlock_AcceptMissedBlock(t *testing.T) {
 	var next = blockgen.GenerateNextFrom(last, data, nil)
 	var nextnext = blockgen.GenerateNextFrom(next, data, nil)
 	node.Enable()
-	go node.ProcessNextBlock(blockgen.Data{})
 	mesh.existingBlocks = append(mesh.existingBlocks, next, nextnext)
-	mesh.chanToNode <- nextnext
-	node.Disable()
+	go func() { mesh.chanToNode <- nextnext }()
+	node.ProcessNextBlock(blockgen.Data{})
 	if mesh.timesAskedForBlocks < 2 {
 		t.Fatalf("node did not ask for blocks when it got block ahead")
 	}
@@ -202,9 +199,8 @@ func TestNodeProcessNextBlock_IgnoreOldBlock(t *testing.T) {
 	var data = testData()
 	var old = blockgen.GenerateNextFrom(mesh.existingBlocks[0], data, nil)
 	node.Enable()
-	go node.ProcessNextBlock(blockgen.Data{})
-	mesh.chanToNode <- old
-	node.Disable()
+	go func() { mesh.chanToNode <- old }()
+	node.ProcessNextBlock(blockgen.Data{})
 	if node.Blocks(0)[old.Index].Data == data {
 		t.Fatalf("node accepted received old block")
 	}
@@ -213,13 +209,13 @@ func TestNodeProcessNextBlock_IgnoreOldBlock(t *testing.T) {
 func TestNode_Connection(t *testing.T) {
 	var mesh = newTestMesh()
 	var node = NewNode(&mesh)
-	node.Enable()
 	if !mesh.connected {
-		t.Fatalf("node did not connect to mesh when started")
+		t.Fatalf("node did not connect to mesh when created")
 	}
+	node.Enable()
 	node.Disable()
-	if mesh.connected {
-		t.Fatalf("node did not disconnect from mesh when shutdown")
+	if !mesh.connected {
+		t.Fatalf("node disconnected from mesh when was disabled")
 	}
 }
 

@@ -4,11 +4,11 @@ import (
 	"slava0135/blockchan/blockgen"
 	"slava0135/blockchan/node"
 	"slava0135/blockchan/validate"
+	log "github.com/sirupsen/logrus"
 )
 
 type ForkMesh struct {
 	receiveChannels map[node.Fork]chan blockgen.Block
-	Mentor          node.Fork
 }
 
 func (m *ForkMesh) AllExistingBlocks(from blockgen.Index) []blockgen.Block {
@@ -53,7 +53,7 @@ func (m *ForkMesh) AllExistingBlocks(from blockgen.Index) []blockgen.Block {
 	return chains[majorFork]
 }
 
-func (m *ForkMesh) SendBlock(from node.Fork, b blockgen.Block) bool {
+func (m *ForkMesh) SendBlockBroadcast(from node.Fork, b blockgen.Block) bool {
 	if !b.HasValidHash() {
 		return false
 	}
@@ -65,13 +65,20 @@ func (m *ForkMesh) SendBlock(from node.Fork, b blockgen.Block) bool {
 	return true
 }
 
-func (m *ForkMesh) ReceiveChan(f node.Fork) chan blockgen.Block {
-	for fork, ch := range m.receiveChannels {
-		if fork == f {
-			return ch
-		}
+func (m *ForkMesh) SendBlockTo(to node.Fork, b blockgen.Block) bool {
+	if !b.HasValidHash() {
+		return false
 	}
-	panic("node not connected to mesh tried to get receive channel")
+	m.ReceiveChan(to) <- b
+	return true
+}
+
+func (m *ForkMesh) ReceiveChan(f node.Fork) chan blockgen.Block {
+	if ch, ok := m.receiveChannels[f]; ok {
+		return ch
+	}
+	log.Panic("node not connected to mesh tried to get receive channel")
+	panic("")
 }
 
 func (m *ForkMesh) Connect(f node.Fork) {
@@ -79,12 +86,7 @@ func (m *ForkMesh) Connect(f node.Fork) {
 }
 
 func (m *ForkMesh) Disconnect(f node.Fork) {
-	close(m.receiveChannels[f])
 	delete(m.receiveChannels, f)
-}
-
-func (m *ForkMesh) MentorFork() node.Fork {
-	return m.Mentor
 }
 
 func NewForkMesh() *ForkMesh {
