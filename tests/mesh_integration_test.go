@@ -14,7 +14,6 @@ func runNode(node *node.Node, data blockgen.Data, stop *bool, genesis bool) {
 	for !*stop {
 		node.ProcessNextBlock(data)
 	}
-	node.Disable()
 }
 
 func nodeData(n byte) blockgen.Data {
@@ -53,6 +52,7 @@ func TestMeshAndThreeNodes(t *testing.T) {
 	go runNode(node1, nodeData(0x11), &stop, true)
 	time.Sleep(10 * time.Millisecond)
 	go runNode(node2, nodeData(0x22), &stop, false)
+	time.Sleep(time.Second)
 	go runNode(node3, nodeData(0x33), &stop, false)
 	time.Sleep(3 * time.Second)
 	stop = true
