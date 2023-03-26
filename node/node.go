@@ -46,6 +46,7 @@ func (n *Node) Enable() {
 	}
 	n.blocks = n.Mesh.AllExistingBlocks(0)
 	if len(n.blocks) == 0 {
+		log.Info("node generated genesis block")
 		n.blocks = append(n.blocks, blockgen.GenerateGenesisBlock())
 		n.Mesh.SendBlockBroadcast(n, n.blocks[0])
 	}

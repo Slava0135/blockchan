@@ -34,7 +34,7 @@ func newNetworkLink() *NetworkLink {
 	return &l
 }
 
-func Launch(address string, remotes []Remote) {
+func Launch(seed byte, address string, remotes []Remote) {
 	addr, err := net.ResolveUDPAddr("udp", address)
 	if err != nil {
 		log.Panic(err)
@@ -59,8 +59,8 @@ func Launch(address string, remotes []Remote) {
 		log.Info("starting sender to ", v.Address)
 		go runRemoteSender(conn, addr, fork)
 	}
+	go runNode(node, seed)
 	log.Info("starting node on ", addr)
-	go runNode(node)
 	for {
 		var buf [1024]byte
 		for {
@@ -76,10 +76,10 @@ func Launch(address string, remotes []Remote) {
 	}
 }
 
-func runNode(node *node.Node) {
+func runNode(node *node.Node, seed byte) {
 	node.Enable()
 	for {
-		node.ProcessNextBlock(blockgen.Data{})
+		node.ProcessNextBlock(blockgen.Data{seed, seed, seed})
 	}
 }
 
