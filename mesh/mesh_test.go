@@ -122,6 +122,9 @@ func TestForkMeshSendBlock_DontSendInvalidBlock(t *testing.T) {
 	if mesh.SendBlockBroadcast(fork, block) {
 		t.Fatalf("sent invalid block")
 	}
+	if mesh.SendBlockTo(fork, block) {
+		t.Fatalf("sent invalid block")
+	}
 }
 
 func TestForkMeshAllExistingBlocks_IgnoreInvalidChains(t *testing.T) {

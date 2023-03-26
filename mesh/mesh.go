@@ -69,17 +69,13 @@ func (m *ForkMesh) SendBlockTo(to node.Fork, b blockgen.Block) bool {
 	if !b.HasValidHash() {
 		return false
 	}
-	if ch := m.receiveChannels[to]; ch != nil {
-		ch <- b
-	}
+	m.ReceiveChan(to) <- b
 	return true
 }
 
 func (m *ForkMesh) ReceiveChan(f node.Fork) chan blockgen.Block {
-	for fork, ch := range m.receiveChannels {
-		if fork == f {
-			return ch
-		}
+	if ch := m.receiveChannels[f]; ch != nil {
+		return ch
 	}
 	log.Panic("node not connected to mesh tried to get receive channel")
 	panic("")
