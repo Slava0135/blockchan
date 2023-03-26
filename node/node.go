@@ -29,7 +29,10 @@ type Fork interface {
 }
 
 func (n *Node) Blocks(from blockgen.Index) []blockgen.Block {
-	return n.blocks[from:]
+	if int(from) < len(n.blocks) {
+		return n.blocks[from:]
+	}
+	return nil
 }
 
 func NewNode(mesh Mesh) *Node {

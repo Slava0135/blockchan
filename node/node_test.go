@@ -234,3 +234,9 @@ func TestNodeProcessNextBlock_DoubleProcess(t *testing.T) {
 		t.Fatalf("node did not panic because of double processing")
 	}
 }
+
+func TestNodeBlocks_OutOfRange(t *testing.T) {
+	var mesh = newTestMesh()
+	var node = NewNode(&mesh)
+	node.Blocks(42)
+}
