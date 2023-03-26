@@ -2,14 +2,12 @@ package network
 
 import (
 	"fmt"
+	log "github.com/sirupsen/logrus"
 	"net"
 	"slava0135/blockchan/blockgen"
 	"slava0135/blockchan/mesh"
 	"slava0135/blockchan/node"
 	"slava0135/blockchan/protocol"
-	"time"
-
-	log "github.com/sirupsen/logrus"
 )
 
 type NetworkLink struct {
@@ -66,7 +64,6 @@ func Launch(address string, remotes []Remote) {
 	for {
 		var buf [1024]byte
 		for {
-			time.Sleep(time.Duration(10) * time.Millisecond)
 			rlen, rem, err := conn.ReadFromUDP(buf[:])
 			if err != nil {
 				continue
