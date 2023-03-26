@@ -60,7 +60,10 @@ func (f *RemoteFork) Listen(shutdown chan struct{}) {
 				}
 				var lastIndex = chain[len(chain)-1].Index
 				for _, b := range chain {
-					f.Link.SendChannel() <- messages.PackMessage(messages.SendBlockMsg{Block: b, LastBlockIndex: uint64(lastIndex)})
+					var b = b
+					go func() {
+						f.Link.SendChannel() <- messages.PackMessage(messages.SendBlockMsg{Block: b, LastBlockIndex: uint64(lastIndex)})
+					}()
 				}
 			}
 		case index := <-f.blocksReq:
@@ -96,7 +99,10 @@ func (f *RemoteFork) Listen(shutdown chan struct{}) {
 		ret:
 			var sortedChain = make([]blockgen.Block, len(chain))
 			for _, b := range chain {
-				sortedChain[b.Index-index] = b
+				var i = b.Index - index
+				if int(i) < len(chain) {
+					sortedChain[b.Index-index] = b
+				}
 			}
 			f.blocksAns <- sortedChain
 		}
