@@ -37,6 +37,7 @@ func NewNode(mesh Mesh) *Node {
 	node.Mesh = mesh
 	node.shutdown = make(chan struct{})
 	node.inProcess = new(bool)
+	mesh.Connect(node)
 	return node
 }
 
@@ -51,7 +52,6 @@ func (n *Node) Enable() {
 		n.Mesh.SendBlockBroadcast(n, n.blocks[0])
 	}
 	n.Enabled = true
-	n.Mesh.Connect(n)
 }
 
 func (n *Node) ProcessNextBlock(data blockgen.Data) {
@@ -109,7 +109,6 @@ func (n *Node) Disable() {
 	if !n.Enabled {
 		log.Panic("node was not enabled!")
 	}
-	n.Mesh.Disconnect(n)
 	if *n.inProcess {
 		n.shutdown <- struct{}{}
 	}

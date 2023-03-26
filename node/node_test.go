@@ -209,13 +209,13 @@ func TestNodeProcessNextBlock_IgnoreOldBlock(t *testing.T) {
 func TestNode_Connection(t *testing.T) {
 	var mesh = newTestMesh()
 	var node = NewNode(&mesh)
-	node.Enable()
 	if !mesh.connected {
-		t.Fatalf("node did not connect to mesh when started")
+		t.Fatalf("node did not connect to mesh when created")
 	}
+	node.Enable()
 	node.Disable()
-	if mesh.connected {
-		t.Fatalf("node did not disconnect from mesh when shutdown")
+	if !mesh.connected {
+		t.Fatalf("node disconnected from mesh when was disabled")
 	}
 }
 
