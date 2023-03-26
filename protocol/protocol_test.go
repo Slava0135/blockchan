@@ -40,8 +40,10 @@ func (l *testLink) RecvChannel() chan []byte {
 func TestListen_SendBlock(t *testing.T) {
 	var link = newTestLink()
 	var mesh = mesh.NewForkMesh()
-	var remote = NewRemoteFork(mesh, link, nil)
+	var mentor = &testFork{}
+	var remote = NewRemoteFork(mesh, link, mentor)
 	var block = blockgen.GenerateNextFrom(blockgen.GenerateGenesisBlock(), blockgen.Data{1, 2, 3}, nil)
+	mentor.blocks = []blockgen.Block{block}
 	go remote.Listen(nil)
 	time.Sleep(time.Second)
 	go mesh.SendBlockBroadcast(nil, block)
