@@ -8,9 +8,11 @@ import (
 )
 
 type RemoteFork struct {
-	Link   Link
-	mesh   node.Mesh
-	mentor node.Fork
+	Link      Link
+	mesh      node.Mesh
+	mentor    node.Fork
+	blocksReq chan blockgen.Index
+	blocksAns chan []blockgen.Block
 }
 
 type Link interface {
@@ -23,40 +25,15 @@ func NewRemoteFork(mesh *mesh.ForkMesh, link Link, mentor node.Fork) *RemoteFork
 	f.Link = link
 	f.mesh = mesh
 	f.mentor = mentor
+	f.blocksReq = make(chan blockgen.Index)
+	f.blocksAns = make(chan []blockgen.Block)
 	return f
 }
 
 func (f *RemoteFork) Blocks(index blockgen.Index) []blockgen.Block {
-	go func() {
-		f.Link.SendChannel() <- messages.PackMessage(messages.AskForBlocksMsg{Index: uint64(index)})
-	}()
-	var chain = make(map[blockgen.Index]blockgen.Block)
-	var expectedLen uint64 = 0
-	for msg := range f.Link.RecvChannel() {
-		var got = messages.UnpackMessage(msg)
-		var b, ok = got.(messages.SendBlockMsg)
-		if ok && b.Block.Index >= index {
-			chain[b.Block.Index] = b.Block
-			var newLen = b.LastBlockIndex - uint64(index) + 1
-			if newLen > expectedLen {
-				expectedLen = newLen
-			}
-			if len(chain) >= int(expectedLen) {
-				break
-			}
-		}
-	}
-	var sortedChain = make([]blockgen.Block, len(chain))
-	for _, b := range chain {
-		sortedChain[b.Index-index] = b
-	}
-	return sortedChain
-}
-
-func (f *RemoteFork) sendBlock(b blockgen.Block) {
-	var chain = f.mentor.Blocks(0)
-	var lastIndex = chain[len(chain)-1].Index
-	f.Link.SendChannel() <- messages.PackMessage(messages.SendBlockMsg{Block: b, LastBlockIndex: uint64(lastIndex)})
+	f.blocksReq <- index
+	chain := <- f.blocksAns
+	return chain
 }
 
 func (f *RemoteFork) Listen(shutdown chan struct{}) {
@@ -67,18 +44,44 @@ func (f *RemoteFork) Listen(shutdown chan struct{}) {
 		case <-shutdown:
 			return
 		case b := <-f.mesh.ReceiveChan(f):
-			go f.sendBlock(b)
+			var chain = f.mentor.Blocks(0)
+			var lastIndex = chain[len(chain)-1].Index
+			f.Link.SendChannel() <- messages.PackMessage(messages.SendBlockMsg{Block: b, LastBlockIndex: uint64(lastIndex)})
 		case msg := <-f.Link.RecvChannel():
 			var i = messages.UnpackMessage(msg)
 			switch v := i.(type) {
 			case messages.SendBlockMsg:
 				f.mesh.SendBlockTo(f.mentor, v.Block)
 			case messages.AskForBlocksMsg:
-				var blocks = f.mentor.Blocks(blockgen.Index(v.Index))
-				for _, b := range blocks {
-					f.sendBlock(b)
+				var chain = f.mentor.Blocks(blockgen.Index(v.Index))
+				var lastIndex = chain[len(chain)-1].Index
+				for _, b := range chain {
+					f.Link.SendChannel() <- messages.PackMessage(messages.SendBlockMsg{Block: b, LastBlockIndex: uint64(lastIndex)})
 				}
 			}
+		case index := <-f.blocksReq:
+			f.Link.SendChannel() <- messages.PackMessage(messages.AskForBlocksMsg{Index: uint64(index)})
+			var chain = make(map[blockgen.Index]blockgen.Block)
+			var expectedLen uint64 = 0
+			for msg := range f.Link.RecvChannel() {
+				var got = messages.UnpackMessage(msg)
+				var b, ok = got.(messages.SendBlockMsg)
+				if ok && b.Block.Index >= index {
+					chain[b.Block.Index] = b.Block
+					var newLen = b.LastBlockIndex - uint64(index) + 1
+					if newLen > expectedLen {
+						expectedLen = newLen
+					}
+					if len(chain) >= int(expectedLen) {
+						break
+					}
+				}
+			}
+			var sortedChain = make([]blockgen.Block, len(chain))
+			for _, b := range chain {
+				sortedChain[b.Index-index] = b
+			}
+			f.blocksAns <- sortedChain
 		}
 	}
 }
