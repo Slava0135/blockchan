@@ -89,6 +89,7 @@ func (n *Node) ProcessNextBlock(data blockgen.Data) {
 				n.blocks = chain
 				return
 			}
+			log.Info("node rejected new chain")
 		case b := <-nextBlock:
 			log.Info("generated next block ", b)
 			n.blocks = append(n.blocks, b)
