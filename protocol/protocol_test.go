@@ -160,3 +160,12 @@ func TestListen_AskedForBlocks(t *testing.T) {
 		t.Fatalf("failed to send chain for request")
 	}
 }
+
+func TestShutdown(t *testing.T) {
+	var link = newTestLink()
+	var mesh = mesh.NewForkMesh()
+	var shut = make(chan struct{})
+	var remote = NewRemoteFork(mesh, link, nil)
+	go remote.Listen(shut)
+	shut <- struct{}{}
+}
