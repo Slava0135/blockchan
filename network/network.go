@@ -87,7 +87,7 @@ func runRemoteSender(conn *net.UDPConn, addr *net.UDPAddr, fork *protocol.Remote
 	go func() {
 		for msg := range fork.Link.SendChannel() {
 			log.Info(fmt.Sprintf("%s sending message to %s of length %d bytes", conn.LocalAddr(), addr, len(msg)))
-			log.Info(string(msg))
+			log.Debug(string(msg))
 			conn.WriteToUDP(msg, addr)
 		}
 	}()
