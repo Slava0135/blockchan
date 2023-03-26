@@ -80,7 +80,6 @@ func (m *ForkMesh) Connect(f node.Fork) {
 }
 
 func (m *ForkMesh) Disconnect(f node.Fork) {
-	close(m.receiveChannels[f])
 	delete(m.receiveChannels, f)
 }
 
