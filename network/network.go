@@ -60,7 +60,7 @@ func Launch(name string, address string, remotes []Remote, genesis bool) {
 		go runRemoteSender(conn, addr, fork)
 	}
 	go runNode(node, name, genesis)
-	log.Info("starting node %s on %s", node.Name, addr)
+	log.Infof("starting node %s on %s", node.Name, addr)
 	for {
 		var buf [1024]byte
 		for {
