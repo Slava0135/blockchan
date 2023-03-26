@@ -49,18 +49,34 @@ func Launch(address string, remotes []Remote) {
 	log.Info("socket ", addr, " initialised")
 	var mesh = mesh.NewForkMesh()
 	var node = node.NewNode(mesh)
-	var link = newNetworkLink()
-	var fork = protocol.NewRemoteFork(mesh, link, node)
+	var forks = make(map[string]*protocol.RemoteFork)
 	for _, v := range remotes {
+		addr, err := net.ResolveUDPAddr("udp", v.Address)
+		if err != nil {
+			log.Panic(err)
+		}
 		var link = newNetworkLink()
 		var fork = protocol.NewRemoteFork(mesh, link, node)
-		log.Info("starting sender on port ", v.Address)
-		go runRemoteSender(conn, v, fork)
+		forks[addr.String()] = fork
+		log.Info("starting sender to ", v.Address)
+		go runRemoteSender(conn, addr, fork)
 	}
-	log.Info("starting listen on ", addr)
-	go runRemoteListener(conn, fork)
 	log.Info("starting node on ", addr)
-	runNode(node)
+	go runNode(node)
+	for {
+		var buf [1024]byte
+		for {
+			time.Sleep(time.Duration(10) * time.Millisecond)
+			rlen, rem, err := conn.ReadFromUDP(buf[:])
+			if err != nil {
+				continue
+			}
+			if f, ok := forks[rem.String()]; ok {
+				log.Info(fmt.Sprintf("%s received message from %s of length %d bytes", conn.LocalAddr(), rem, rlen))
+				f.Link.RecvChannel() <- buf[:rlen]
+			}
+		}
+	}
 }
 
 func runNode(node *node.Node) {
@@ -70,38 +86,12 @@ func runNode(node *node.Node) {
 	}
 }
 
-func runRemoteSender(conn *net.UDPConn, remote Remote, fork *protocol.RemoteFork) {
-	addr, err := net.ResolveUDPAddr("udp", remote.Address)
-	if err != nil {
-		log.Panic(err)
-	}
+func runRemoteSender(conn *net.UDPConn, addr *net.UDPAddr, fork *protocol.RemoteFork) {
 	go func() {
 		for msg := range fork.Link.SendChannel() {
 			log.Info(fmt.Sprintf("%s sending message to %s of length %d bytes", conn.LocalAddr(), addr, len(msg)))
 			log.Info(string(msg))
 			conn.WriteToUDP(msg, addr)
-		}
-	}()
-	for {
-		fork.Listen(nil)
-	}
-}
-
-func runRemoteListener(conn *net.UDPConn, fork *protocol.RemoteFork) {
-	go func() {
-		for range fork.Link.SendChannel() {
-		}
-	}()
-	go func() {
-		var buf [1024]byte
-		for {
-			time.Sleep(time.Duration(100) * time.Millisecond)
-			rlen, rem, err := conn.ReadFromUDP(buf[:])
-			if err != nil {
-				continue
-			}
-			log.Info(fmt.Sprintf("%s received message from %s of length %d bytes", conn.LocalAddr(), rem, rlen))
-			fork.Link.RecvChannel() <- buf[:rlen]
 		}
 	}()
 	for {
