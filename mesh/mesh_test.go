@@ -37,7 +37,7 @@ func TestForkMesh_SendAndReceive(t *testing.T) {
 	}
 }
 
-func TestForkMeshSendBlock_Loopback(t *testing.T) {
+func TestForkMeshSendBlockBroadcast_Loopback(t *testing.T) {
 	var mesh = NewForkMesh()
 	var fork = newTestFork(mesh)
 	var block = blockgen.GenerateGenesisBlock()
@@ -50,7 +50,7 @@ func TestForkMeshSendBlock_Loopback(t *testing.T) {
 	}
 }
 
-func TestForkMeshSendBlock_ThreeForks(t *testing.T) {
+func TestForkMeshSendBlockBroadcast_ThreeForks(t *testing.T) {
 	var mesh = NewForkMesh()
 	var forkFrom = newTestFork(mesh)
 	var forkTo1 = newTestFork(mesh)
@@ -173,5 +173,28 @@ func TestForkMeshAllExistingBlocks_SameIndex(t *testing.T) {
 	var got = mesh.AllExistingBlocks(0)
 	if !got[len(got)-1].Equal(nextMajor) {
 		t.Fatalf("mesh did not prefer major chain over minor")
+	}
+}
+
+func TestFrokMeshSendBlockTo(t *testing.T) {
+	var mesh = NewForkMesh()
+	var forkFrom = newTestFork(mesh)
+	var forkTo = newTestFork(mesh)
+	var block = blockgen.GenerateGenesisBlock()
+	go mesh.SendBlockTo(forkTo, block)
+	var blockTo blockgen.Block
+	var blockFrom blockgen.Block
+	go func() {
+		blockTo = <-mesh.ReceiveChan(forkTo)
+	}()
+	go func() {
+		blockFrom = <-mesh.ReceiveChan(forkFrom)
+	}()
+	time.Sleep(time.Second)
+	if !block.Equal(blockTo) {
+		t.Fatalf("block was not sent to first fork")
+	}
+	if block.Equal(blockFrom) {
+		t.Fatalf("block was sent to second fork")
 	}
 }

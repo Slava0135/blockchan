@@ -65,6 +65,16 @@ func (m *ForkMesh) SendBlockBroadcast(from node.Fork, b blockgen.Block) bool {
 	return true
 }
 
+func (m *ForkMesh) SendBlockTo(to node.Fork, b blockgen.Block) bool {
+	if !b.HasValidHash() {
+		return false
+	}
+	if ch := m.receiveChannels[to]; ch != nil {
+		ch <- b
+	}
+	return true
+}
+
 func (m *ForkMesh) ReceiveChan(f node.Fork) chan blockgen.Block {
 	for fork, ch := range m.receiveChannels {
 		if fork == f {
