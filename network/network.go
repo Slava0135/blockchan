@@ -69,7 +69,7 @@ func Launch(name string, address string, remotes []Remote, genesis bool) {
 				continue
 			}
 			if f, ok := forks[rem.String()]; ok {
-				log.Infof("%s received message from %s of length %d bytes", conn.LocalAddr(), rem, rlen)
+				log.Debug("%s received message from %s of length %d bytes", conn.LocalAddr(), rem, rlen)
 				var msg = make([]byte, rlen)
 				copy(msg, buf[:rlen])
 				f.Link.RecvChannel() <- msg
@@ -90,7 +90,7 @@ func runNode(node *node.Node, data string, genesis bool) {
 func runRemoteSender(conn *net.UDPConn, addr *net.UDPAddr, fork *protocol.RemoteFork) {
 	go func() {
 		for msg := range fork.Link.SendChannel() {
-			log.Infof("%s sending message to %s of length %d bytes", conn.LocalAddr(), addr, len(msg))
+			log.Debug("%s sending message to %s of length %d bytes", conn.LocalAddr(), addr, len(msg))
 			log.Debug(string(msg))
 			conn.WriteToUDP(msg, addr)
 		}
