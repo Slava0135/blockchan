@@ -59,7 +59,10 @@ func (m *ForkMesh) SendBlockBroadcast(from node.Fork, b blockgen.Block) bool {
 	}
 	for fork, ch := range m.receiveChannels {
 		if fork != from {
-			ch <- b
+			var ch = ch
+			go func() {
+				ch <- b
+			}()
 		}
 	}
 	return true

@@ -124,7 +124,7 @@ func (n *Node) ProcessNextBlock(data blockgen.Data) {
 		case b := <-nextBlock:
 			log.Infof("node %s generated next block %s", n.Name, b)
 			n.blocks = append(n.blocks, b)
-			go n.Mesh.SendBlockBroadcast(n, b)
+			n.Mesh.SendBlockBroadcast(n, b)
 			return
 		}
 	}
