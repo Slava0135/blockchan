@@ -67,10 +67,10 @@ func (n *Node) ProcessNextBlock(data blockgen.Data) {
 	}
 	*n.inProcess = true
 	defer func() { *n.inProcess = false }()
-	var cancel = false
-	defer func() { cancel = true }()
+	var cancel = make(chan struct{}, 1)
+	defer func() { cancel <- struct{}{} }()
 	var nextBlock = make(chan blockgen.Block, 1)
-	go generateNextFrom(n.blocks[len(n.blocks)-1], data, nextBlock, &cancel)
+	go generateNextFrom(n.blocks[len(n.blocks)-1], data, nextBlock, cancel)
 	for {
 		select {
 		case <-n.shutdown:
@@ -116,7 +116,7 @@ func (n *Node) ProcessNextBlock(data blockgen.Data) {
 	}
 }
 
-func generateNextFrom(block blockgen.Block, data blockgen.Data, nextBlock chan blockgen.Block, cancel *bool) {
+func generateNextFrom(block blockgen.Block, data blockgen.Data, nextBlock chan blockgen.Block, cancel chan struct{}) {
 	var b = blockgen.GenerateNextFrom(block, data, cancel)
 	nextBlock <- b
 }
