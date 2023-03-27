@@ -24,7 +24,7 @@ func (b Block) HasValidHash() bool {
 	return bytes.Equal(b.Hash, calculateHashFrom(b)) && hasValidEnding(b.Hash)
 }
 
-func GenerateNextFrom(prev Block, data Data, cancel *bool) Block {
+func GenerateNextFrom(prev Block, data Data, cancel chan struct{}) Block {
 	var next = Block{}
 	next.Index = prev.Index + 1
 	next.PrevHash = prev.Hash
@@ -41,14 +41,19 @@ func GenerateGenesisBlock() Block {
 	return b
 }
 
-func (b *Block) GenerateValidHash(cancel *bool) {
-	for cancel == nil || !*cancel {
-		var hash = calculateHashFrom(*b)
-		if hasValidEnding(hash) {
-			b.Hash = hash
+func (b *Block) GenerateValidHash(cancel chan struct{}) {
+	for {
+		select {
+		case <-cancel:
 			return
+		default:
+			var hash = calculateHashFrom(*b)
+			if hasValidEnding(hash) {
+				b.Hash = hash
+				return
+			}
+			b.Nonce += 1
 		}
-		b.Nonce += 1
 	}
 }
 

@@ -67,16 +67,25 @@ func (n *Node) ProcessNextBlock(data blockgen.Data) {
 	}
 	*n.inProcess = true
 	defer func() { *n.inProcess = false }()
-	var cancel = false
-	defer func() { cancel = true }()
+	var cancel = make(chan struct{}, 1)
+	defer func() { cancel <- struct{}{} }()
 	var nextBlock = make(chan blockgen.Block, 1)
-	go generateNextFrom(n.blocks[len(n.blocks)-1], data, nextBlock, &cancel)
+	if len(n.blocks) > 0 {
+		go generateNextFrom(n.blocks[len(n.blocks)-1], data, nextBlock, cancel)
+	} else {
+		log.Warnf("node %s does not have any blocks", n.Name)
+	}
 	for {
 		select {
 		case <-n.shutdown:
 			return
 		case b := <-n.Mesh.ReceiveChan(n):
 			log.Infof("node %s received block %s", n.Name, b)
+			if len(n.blocks) == 0 && b.Index == 0 {
+				log.Infof("node accepted genesis block")
+				n.blocks = []blockgen.Block{b}
+				return
+			}
 			var lastThis = n.blocks[len(n.blocks)-1].Index
 			if n.Verified >= b.Index {
 				log.Infof("node %s ignores old block", n.Name)
@@ -116,7 +125,7 @@ func (n *Node) ProcessNextBlock(data blockgen.Data) {
 	}
 }
 
-func generateNextFrom(block blockgen.Block, data blockgen.Data, nextBlock chan blockgen.Block, cancel *bool) {
+func generateNextFrom(block blockgen.Block, data blockgen.Data, nextBlock chan blockgen.Block, cancel chan struct{}) {
 	var b = blockgen.GenerateNextFrom(block, data, cancel)
 	nextBlock <- b
 }
