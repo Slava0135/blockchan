@@ -14,10 +14,6 @@ type NetworkLink struct {
 	recvChannel chan []byte
 }
 
-type Remote struct {
-	Address string
-}
-
 func (l *NetworkLink) SendChannel() chan []byte {
 	return l.sendChannel
 }
@@ -33,7 +29,7 @@ func newNetworkLink() *NetworkLink {
 	return &l
 }
 
-func Launch(name string, address string, remotes []Remote, genesis bool) {
+func Launch(name string, address string, remotes []string, genesis bool) {
 	addr, err := net.ResolveUDPAddr("udp", address)
 	if err != nil {
 		log.Panic(err)
@@ -49,14 +45,14 @@ func Launch(name string, address string, remotes []Remote, genesis bool) {
 	node.Name = name
 	var forks = make(map[string]*protocol.RemoteFork)
 	for _, v := range remotes {
-		addr, err := net.ResolveUDPAddr("udp", v.Address)
+		addr, err := net.ResolveUDPAddr("udp", v)
 		if err != nil {
 			log.Panic(err)
 		}
 		var link = newNetworkLink()
 		var fork = protocol.NewRemoteFork(mesh, link, node)
 		forks[addr.String()] = fork
-		log.Info("starting sender to ", v.Address)
+		log.Info("starting sender to ", v)
 		go runRemoteSender(conn, addr, fork)
 	}
 	go runNode(node, name, genesis)
