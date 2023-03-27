@@ -14,10 +14,6 @@ type NetworkLink struct {
 	recvChannel chan []byte
 }
 
-type Remote struct {
-	Address string
-}
-
 func (l *NetworkLink) SendChannel() chan []byte {
 	return l.sendChannel
 }
@@ -33,7 +29,7 @@ func newNetworkLink() *NetworkLink {
 	return &l
 }
 
-func Launch(name string, address string, remotes []Remote, genesis bool) {
+func Launch(name string, address string, remotes []string, genesis bool) {
 	addr, err := net.ResolveUDPAddr("udp", address)
 	if err != nil {
 		log.Panic(err)
@@ -49,14 +45,14 @@ func Launch(name string, address string, remotes []Remote, genesis bool) {
 	node.Name = name
 	var forks = make(map[string]*protocol.RemoteFork)
 	for _, v := range remotes {
-		addr, err := net.ResolveUDPAddr("udp", v.Address)
+		addr, err := net.ResolveUDPAddr("udp", v)
 		if err != nil {
 			log.Panic(err)
 		}
 		var link = newNetworkLink()
 		var fork = protocol.NewRemoteFork(mesh, link, node)
 		forks[addr.String()] = fork
-		log.Info("starting sender to ", v.Address)
+		log.Info("starting sender to ", v)
 		go runRemoteSender(conn, addr, fork)
 	}
 	go runNode(node, name, genesis)
@@ -69,7 +65,7 @@ func Launch(name string, address string, remotes []Remote, genesis bool) {
 				continue
 			}
 			if f, ok := forks[rem.String()]; ok {
-				log.Debug("%s received message from %s of length %d bytes", conn.LocalAddr(), rem, rlen)
+				log.Debugf("%s received message from %s of length %d bytes", conn.LocalAddr(), rem, rlen)
 				var msg = make([]byte, rlen)
 				copy(msg, buf[:rlen])
 				f.Link.RecvChannel() <- msg
@@ -90,7 +86,7 @@ func runNode(node *node.Node, data string, genesis bool) {
 func runRemoteSender(conn *net.UDPConn, addr *net.UDPAddr, fork *protocol.RemoteFork) {
 	go func() {
 		for msg := range fork.Link.SendChannel() {
-			log.Debug("%s sending message to %s of length %d bytes", conn.LocalAddr(), addr, len(msg))
+			log.Debugf("%s sending message to %s of length %d bytes", conn.LocalAddr(), addr, len(msg))
 			log.Debug(string(msg))
 			conn.WriteToUDP(msg, addr)
 		}
