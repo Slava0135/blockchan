@@ -1,7 +1,6 @@
 package network
 
 import (
-	"fmt"
 	log "github.com/sirupsen/logrus"
 	"net"
 	"slava0135/blockchan/blockgen"
@@ -34,7 +33,7 @@ func newNetworkLink() *NetworkLink {
 	return &l
 }
 
-func Launch(seed byte, address string, remotes []Remote, genesis bool) {
+func Launch(name string, address string, remotes []Remote, genesis bool) {
 	addr, err := net.ResolveUDPAddr("udp", address)
 	if err != nil {
 		log.Panic(err)
@@ -47,6 +46,7 @@ func Launch(seed byte, address string, remotes []Remote, genesis bool) {
 	log.Info("socket ", addr, " initialised")
 	var mesh = mesh.NewForkMesh()
 	var node = node.NewNode(mesh)
+	node.Name = name
 	var forks = make(map[string]*protocol.RemoteFork)
 	for _, v := range remotes {
 		addr, err := net.ResolveUDPAddr("udp", v.Address)
@@ -59,8 +59,8 @@ func Launch(seed byte, address string, remotes []Remote, genesis bool) {
 		log.Info("starting sender to ", v.Address)
 		go runRemoteSender(conn, addr, fork)
 	}
-	go runNode(node, seed, genesis)
-	log.Info("starting node on ", addr)
+	go runNode(node, name, genesis)
+	log.Infof("starting node %s on %s", node.Name, addr)
 	for {
 		var buf [1024]byte
 		for {
@@ -69,24 +69,28 @@ func Launch(seed byte, address string, remotes []Remote, genesis bool) {
 				continue
 			}
 			if f, ok := forks[rem.String()]; ok {
-				log.Info(fmt.Sprintf("%s received message from %s of length %d bytes", conn.LocalAddr(), rem, rlen))
-				f.Link.RecvChannel() <- buf[:rlen]
+				log.Debug("%s received message from %s of length %d bytes", conn.LocalAddr(), rem, rlen)
+				var msg = make([]byte, rlen)
+				copy(msg, buf[:rlen])
+				f.Link.RecvChannel() <- msg
 			}
 		}
 	}
 }
 
-func runNode(node *node.Node, seed byte, genesis bool) {
+func runNode(node *node.Node, data string, genesis bool) {
 	node.Enable(genesis)
+	var d blockgen.Data
+	copy(d[:], []byte(data))
 	for {
-		node.ProcessNextBlock(blockgen.Data{seed, seed, seed})
+		node.ProcessNextBlock(d)
 	}
 }
 
 func runRemoteSender(conn *net.UDPConn, addr *net.UDPAddr, fork *protocol.RemoteFork) {
 	go func() {
 		for msg := range fork.Link.SendChannel() {
-			log.Info(fmt.Sprintf("%s sending message to %s of length %d bytes", conn.LocalAddr(), addr, len(msg)))
+			log.Debug("%s sending message to %s of length %d bytes", conn.LocalAddr(), addr, len(msg))
 			log.Debug(string(msg))
 			conn.WriteToUDP(msg, addr)
 		}

@@ -10,7 +10,7 @@ import (
 
 const (
 	sendBlock    = "SENDING BLOCK"
-	askForBlocks = "ASKING FOR BLOCKS"
+	askForBlocks = "ASKING FOR NEIGHBOURS BLOCKS"
 )
 
 type SendBlockMsg struct {

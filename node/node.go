@@ -10,13 +10,15 @@ import (
 type Node struct {
 	Mesh      Mesh
 	Enabled   bool
+	Verified  blockgen.Index
+	Name      string
 	blocks    []blockgen.Block
 	shutdown  chan struct{}
 	inProcess *bool
 }
 
 type Mesh interface {
-	AllExistingBlocks(from blockgen.Index) []blockgen.Block
+	NeighbourBlocks(from blockgen.Index) []blockgen.Block
 	SendBlockBroadcast(from Fork, b blockgen.Block) bool
 	SendBlockTo(to Fork, b blockgen.Block) bool
 	ReceiveChan(Fork) chan blockgen.Block
@@ -46,21 +48,22 @@ func NewNode(mesh Mesh) *Node {
 
 func (n *Node) Enable(genesis bool) {
 	if n.Enabled {
-		log.Panic("node was already enabled!")
+		log.Panicf("node %s was already enabled!", n.Name)
 	}
 	if genesis {
-		log.Info("node generated genesis block")
+		log.Infof("node %s generated genesis block", n.Name)
 		n.blocks = append(n.blocks, blockgen.GenerateGenesisBlock())
 		n.Mesh.SendBlockBroadcast(n, n.blocks[0])
 	} else {
-		n.blocks = n.Mesh.AllExistingBlocks(0)
+		log.Infof("node %s asks for neighbours blocks", n.Name)
+		n.blocks = n.Mesh.NeighbourBlocks(0)
 	}
 	n.Enabled = true
 }
 
 func (n *Node) ProcessNextBlock(data blockgen.Data) {
 	if *n.inProcess {
-		log.Panic("node was already processing next block!")
+		log.Panicf("node %s was already processing next block!", n.Name)
 	}
 	*n.inProcess = true
 	defer func() { *n.inProcess = false }()
@@ -73,32 +76,41 @@ func (n *Node) ProcessNextBlock(data blockgen.Data) {
 		case <-n.shutdown:
 			return
 		case b := <-n.Mesh.ReceiveChan(n):
-			log.Info("node received block ", b)
+			log.Infof("node %s received block %s", n.Name, b)
 			var lastThis = n.blocks[len(n.blocks)-1].Index
-			var lastOther = b.Index
-			if lastThis > lastOther {
-				log.Info("node ignores old block")
+			if n.Verified >= b.Index {
+				log.Infof("node %s ignores old block", n.Name)
 				continue
 			}
 			var chain []blockgen.Block
-			chain = append(chain, n.blocks...)
-			if lastThis+1 == lastOther {
-				log.Info("node tries to append block")
+			if lastThis+1 == b.Index {
+				log.Infof("node %s tries to append block", n.Name)
+				chain = append(chain, n.blocks...)
 				chain = append(chain, b)
+				if validate.IsValidChain(chain) {
+					n.blocks = append(n.blocks, b)
+					log.Infof("node %s verified block with index %d", n.Name, b.Index)
+					n.Verified = b.Index
+					return
+				} else {
+					log.Warnf("node %s rejected block with %s", n.Name, b)
+				}
 			} else {
-				log.Info("node asks for all existing blocks")
-				chain = append(chain, n.Mesh.AllExistingBlocks(lastThis+1)...)
+				log.Infof("node %s asks for missing neighbours blocks", n.Name)
+				chain = append(chain, n.blocks[:n.Verified+1]...)
+				chain = append(chain, n.Mesh.NeighbourBlocks(n.Verified+1)...)
+				if validate.IsValidChain(chain) {
+					log.Infof("node %s accepted new chain", n.Name)
+					n.blocks = chain
+					return
+				} else {
+					log.Warnf("node %s rejected new chain, last verified block: %d", n.Name, n.Verified)
+				}
 			}
-			if validate.IsValidChain(chain) {
-				log.Info("node accepted new chain")
-				n.blocks = chain
-				return
-			}
-			log.Info("node rejected new chain")
 		case b := <-nextBlock:
-			log.Info("generated next block ", b)
+			log.Infof("node %s generated next block %s", n.Name, b)
 			n.blocks = append(n.blocks, b)
-			n.Mesh.SendBlockBroadcast(n, b)
+			go n.Mesh.SendBlockBroadcast(n, b)
 			return
 		}
 	}
@@ -111,7 +123,7 @@ func generateNextFrom(block blockgen.Block, data blockgen.Data, nextBlock chan b
 
 func (n *Node) Disable() {
 	if !n.Enabled {
-		log.Panic("node was not enabled!")
+		log.Panicf("node %s was not enabled!", n.Name)
 	}
 	if *n.inProcess {
 		n.shutdown <- struct{}{}
