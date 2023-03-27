@@ -243,3 +243,14 @@ func TestNodeBlocks_OutOfRange(t *testing.T) {
 	var node = NewNode(&mesh)
 	node.Blocks(42)
 }
+
+func TestNodeEnable_NoNeighbourBlocks(t *testing.T) {
+	var mesh = newTestMesh()
+	mesh.networkBlocks = nil
+	var node = NewNode(&mesh)
+	node.Enable(false)
+	go func() {
+		mesh.ReceiveChan(node) <- blockgen.GenerateGenesisBlock()
+	}()
+	node.ProcessNextBlock(blockgen.Data{})
+}
