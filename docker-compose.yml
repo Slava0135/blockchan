@@ -25,7 +25,6 @@ services:
       - FIRST 
       - -addr
       - localhost:8001
-      - -genesis
       - localhost:8000
       - localhost:8002
 
@@ -39,6 +38,5 @@ services:
       - SECOND 
       - -addr
       - localhost:8002 
-      - -genesis
       - localhost:8000
       - localhost:8001
