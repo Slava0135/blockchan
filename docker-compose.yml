@@ -1,0 +1,44 @@
+version: "3.8"
+
+services:
+  node0:
+    image: blockchan
+    container_name: node0
+    network_mode: host
+    command: 
+      - /app
+      - -name
+      - ZERO 
+      - -addr
+      - localhost:8000 
+      - -genesis
+      - localhost:8001
+      - localhost:8002
+
+  node1:
+    image: blockchan
+    container_name: node1
+    network_mode: host
+    command: 
+      - /app
+      - -name
+      - FIRST 
+      - -addr
+      - localhost:8001
+      - -genesis
+      - localhost:8000
+      - localhost:8002
+
+  node2:
+    image: blockchan
+    container_name: node2
+    network_mode: host
+    command: 
+      - /app
+      - -name
+      - SECOND 
+      - -addr
+      - localhost:8002 
+      - -genesis
+      - localhost:8000
+      - localhost:8001
