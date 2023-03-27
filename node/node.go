@@ -81,9 +81,14 @@ func (n *Node) ProcessNextBlock(data blockgen.Data) {
 			return
 		case b := <-n.Mesh.ReceiveChan(n):
 			log.Infof("node %s received block %s", n.Name, b)
-			if len(n.blocks) == 0 && b.Index == 0 {
-				log.Infof("node accepted genesis block")
-				n.blocks = []blockgen.Block{b}
+			if len(n.blocks) == 0 {
+				if b.Index == 0 {
+					log.Infof("node %s accepted genesis block", n.Name)
+					n.blocks = []blockgen.Block{b}
+				} else {
+					log.Infof("node %s still does not have any blocks", n.Name)
+					n.blocks = n.Mesh.NeighbourBlocks(0)
+				}
 				return
 			}
 			var lastThis = n.blocks[len(n.blocks)-1].Index
