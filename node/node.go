@@ -110,11 +110,19 @@ func (n *Node) ProcessNextBlock(data blockgen.Data) {
 				var index = n.Verified+1
 				log.Infof("node %s requesting blocks from network from index %d", n.Name, index)
 				var received = n.Mesh.RequestBlocks(index)
-				n.blocks = n.blocks[:index]
-				n.blocks = append(n.blocks, received...)
-				n.Verified = n.blocks[len(n.blocks)-1].Index
-				log.Infof("node %s verified chain (last verified: %d)", n.Name, n.Verified)
-				return
+				var chain []blockgen.Block
+				chain = append(chain, n.blocks[index-1])
+				chain = append(chain, received...)
+				if validate.IsValidChain(chain) {
+					n.blocks = n.blocks[:index]
+					n.blocks = append(n.blocks, received...)
+					n.Verified = n.blocks[len(n.blocks)-1].Index
+					log.Infof("node %s verified chain (last verified: %d)", n.Name, n.Verified)
+					return
+				} else {
+					log.Warnf("node %s received invalid chain! ignoring... (last verified: %d)", n.Name, n.Verified)
+					continue
+				}
 			}
 			if b.Index <= n.Verified {
 				if !b.Equal(n.blocks[n.Verified]) {
