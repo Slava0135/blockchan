@@ -80,11 +80,12 @@ func (n *Node) ProcessNextBlock(data blockgen.Data) {
 				return
 			}
 			var chain []blockgen.Block
-			chain = append(chain, n.blocks...)
+			chain = append(chain, n.blocks[n.Verified:]...)
 			chain = append(chain, b)
 			if validate.IsValidChain(chain) {
 				log.Infof("node %s verified block with index %d", n.Name, b.Index)
 				n.blocks = append(n.blocks, b)
+				n.Verified = b.Index
 				return
 			}
 		case b := <-nextBlock:
