@@ -47,6 +47,9 @@ func (n *Node) Enable(genesis bool) {
 		n.blocks = n.Mesh.RequestBlocks(0)
 		if len(n.blocks) != 0 {
 			n.Verified = n.blocks[len(n.blocks)-1].Index
+			log.Infof("node %s verified chain (last verified: %d)", n.Name, n.Verified)
+		} else {
+			log.Infof("node %s did not get blocks", n.Name)
 		}
 	}
 	n.Enabled = true
