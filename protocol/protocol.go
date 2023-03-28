@@ -54,9 +54,9 @@ func (f *RemoteFork) Listen(shutdown chan struct{}) {
 			var chain = f.mentor.Blocks(0)
 			var lastIndex = chain[len(chain)-1].Index
 			if b.Drop {
-				f.Link.SendChan <- messages.PackMessage(messages.SendBlockMsg{Block: b.Block, LastBlockIndex: uint64(lastIndex)})
-			} else {
 				f.Link.SendChan <- messages.PackMessage(messages.DropBlockMsg{Block: b.Block, LastBlockIndex: uint64(lastIndex)})
+			} else {
+				f.Link.SendChan <- messages.PackMessage(messages.SendBlockMsg{Block: b.Block, LastBlockIndex: uint64(lastIndex)})
 			}
 		case msg := <-f.Link.RecvChan:
 			var i = messages.UnpackMessage(msg)
