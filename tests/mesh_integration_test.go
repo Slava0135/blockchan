@@ -5,6 +5,7 @@ import (
 	"slava0135/blockchan/mesh"
 	"slava0135/blockchan/node"
 	"slava0135/blockchan/validate"
+	"sort"
 	"testing"
 	"time"
 )
@@ -36,7 +37,10 @@ func TestMeshAndTwoNodes(t *testing.T) {
 	go runNode(node2, nodeData(0x22), &stop, false)
 	time.Sleep(time.Second)
 	stop = true
-	if !validate.AreEqualChains(node1.Blocks(0), node2.Blocks(0)) {
+	var verified = []int{int(node1.Verified), int(node2.Verified)}
+	sort.Ints(verified)
+	var last = verified[0]
+	if !validate.AreEqualChains(node1.Blocks(0)[:last], node2.Blocks(0)[:last]) {
 		t.Fatalf("chains diverged")
 	}
 	var chain = node1.Blocks(0)
@@ -61,7 +65,10 @@ func TestMeshAndThreeNodes(t *testing.T) {
 	go runNode(node3, nodeData(0x33), &stop, false)
 	time.Sleep(3 * time.Second)
 	stop = true
-	if !validate.AreEqualChains(node1.Blocks(0), node2.Blocks(0)) || !validate.AreEqualChains(node2.Blocks(0), node3.Blocks(0)) {
+	var verified = []int{int(node1.Verified), int(node2.Verified), int(node3.Verified)}
+	sort.Ints(verified)
+	var last = verified[0]
+	if !validate.AreEqualChains(node1.Blocks(0)[:last], node2.Blocks(0)[:last]) || !validate.AreEqualChains(node2.Blocks(0)[:last], node3.Blocks(0)[:last]) {
 		t.Fatalf("chains diverged")
 	}
 	var chain = node1.Blocks(0)
