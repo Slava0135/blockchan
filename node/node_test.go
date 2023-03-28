@@ -283,8 +283,10 @@ func TestNodeProcessNextBlock_AskToDropUnverified(t *testing.T) {
 	node.Enable(false)
 	var prev = m.networkBlocks[len(m.networkBlocks)-2]
 	var other = blockgen.GenerateNextFrom(prev, blockgen.Data{42}, nil)
-	go node.ProcessNextBlock(blockgen.Data{})
-	m.RecvChan(node) <- mesh.ForkBlock{Block: other}
+	go func() {
+		m.RecvChan(node) <- mesh.ForkBlock{Block: other}
+	}()
+	node.ProcessNextBlock(blockgen.Data{})
 	if !m.askedToDropBlocks {
 		t.Fatalf("node did not ask other fork to drop their block")
 	}
@@ -298,8 +300,10 @@ func TestNodeProcessNextBlock_DropBlocks(t *testing.T) {
 	node.ProcessNextBlock(blockgen.Data{})
 	var next = blockgen.GenerateNextFrom(m.networkBlocks[len(m.networkBlocks)-1], blockgen.Data{}, nil)
 	m.networkBlocks = append(m.networkBlocks, next)
-	go node.ProcessNextBlock(blockgen.Data{})
-	m.RecvChan(node) <- mesh.ForkBlock{Block: next, Drop: true}
+	go func() {
+		m.RecvChan(node) <- mesh.ForkBlock{Block: next, Drop: true}
+	}()
+	node.ProcessNextBlock(blockgen.Data{})
 	if !validate.AreEqualChains(m.networkBlocks, node.blocks) {
 		t.Fatalf("node did not drop blocks when asked")
 	}
