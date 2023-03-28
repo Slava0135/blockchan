@@ -5,38 +5,47 @@ services:
     image: blockchan
     container_name: node0
     network_mode: host
-    command: 
+    command:
       - /app
       - -name
-      - ZERO 
+      - ZERO
       - -addr
-      - localhost:8000 
+      - localhost:8000
       - -genesis
       - localhost:8001
       - localhost:8002
+    volumes:
+      - blockchan:/blockchan
 
   node1:
     image: blockchan
     container_name: node1
     network_mode: host
-    command: 
+    command:
       - /app
       - -name
-      - FIRST 
+      - FIRST
       - -addr
       - localhost:8001
       - localhost:8000
       - localhost:8002
+    volumes:
+      - blockchan:/blockchan
 
   node2:
     image: blockchan
     container_name: node2
     network_mode: host
-    command: 
+    command:
       - /app
       - -name
-      - SECOND 
+      - SECOND
       - -addr
-      - localhost:8002 
+      - localhost:8002
       - localhost:8000
       - localhost:8001
+    volumes:
+      - blockchan:/blockchan
+
+volumes:
+  blockchan:

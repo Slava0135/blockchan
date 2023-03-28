@@ -83,3 +83,21 @@ package `validate` - blockchain validation
 `./tests` - integration tests
 
 `network.go` - networking code
+
+## Output Files
+
+Every node writes verified blocks (to docker volume `blockchan`) to file `/blockchan/${name}.txt`
+
+You can then access them directly on host mountpoint or using docker:
+
+```sh
+docker run -it --rm -v /path/on/host:/vol busybox ls -l /vol
+```
+
+And read and take diff (host path may be different):
+
+```sh
+docker run -it --rm -v /var/lib/docker/volumes/blockchan_blockchan/_data:/blockchan busybox cat /blockchan/ZERO.txt
+
+docker run -it --rm -v /var/lib/docker/volumes/blockchan_blockchan/_data:/blockchan busybox diff /blockchan/ZERO.txt /blockchan/FIRST.txt
+```
