@@ -14,7 +14,7 @@ type testMesh struct {
 	connected           bool
 }
 
-func (mesh *testMesh) NeighbourBlocks(from blockgen.Index) []blockgen.Block {
+func (mesh *testMesh) RequestBlocks(from blockgen.Index) []blockgen.Block {
 	mesh.timesAskedForBlocks += 1
 	return mesh.networkBlocks[from:]
 }
@@ -242,7 +242,7 @@ func TestNodeBlocks_OutOfRange(t *testing.T) {
 	node.Blocks(42)
 }
 
-func TestNodeEnable_NoNeighbourBlocks(t *testing.T) {
+func TestNodeEnable_NoRequestBlocks(t *testing.T) {
 	var mesh = newTestMesh()
 	mesh.networkBlocks = nil
 	var node = NewNode(&mesh)

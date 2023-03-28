@@ -44,7 +44,7 @@ func (n *Node) Enable(genesis bool) {
 		n.Mesh.SendBlockBroadcast(n, n.blocks[0])
 	} else {
 		log.Infof("node %s asks for neighbours blocks", n.Name)
-		n.blocks = n.Mesh.NeighbourBlocks(0)
+		n.blocks = n.Mesh.RequestBlocks(0)
 	}
 	n.Enabled = true
 }
@@ -75,7 +75,7 @@ func (n *Node) ProcessNextBlock(data blockgen.Data) {
 					n.blocks = []blockgen.Block{b}
 				} else {
 					log.Infof("node %s still does not have any blocks", n.Name)
-					n.blocks = n.Mesh.NeighbourBlocks(0)
+					n.blocks = n.Mesh.RequestBlocks(0)
 				}
 				return
 			}

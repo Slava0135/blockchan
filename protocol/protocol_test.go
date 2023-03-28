@@ -129,7 +129,7 @@ func TestBlocks_OldBlock(t *testing.T) {
 	}
 }
 
-func TestListen_AskedForBlocks(t *testing.T) {
+func TestListen_RequestedBlocks(t *testing.T) {
 	var mesh = mesh.NewForkMesh()
 	var mentor = &testFork{}
 	mesh.Connect(mentor)

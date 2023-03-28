@@ -3,11 +3,12 @@ package mesh
 import (
 	"slava0135/blockchan/blockgen"
 	"slava0135/blockchan/validate"
+
 	log "github.com/sirupsen/logrus"
 )
 
 type Mesh interface {
-	NeighbourBlocks(from blockgen.Index) []blockgen.Block
+	RequestBlocks(from blockgen.Index) []blockgen.Block
 	SendBlockBroadcast(from Fork, b blockgen.Block) bool
 	SendBlockTo(to Fork, b blockgen.Block) bool
 	RecvChan(Fork) chan blockgen.Block
@@ -23,7 +24,7 @@ type ForkMesh struct {
 	receiveChannels map[Fork]chan blockgen.Block
 }
 
-func (m *ForkMesh) NeighbourBlocks(from blockgen.Index) []blockgen.Block {
+func (m *ForkMesh) RequestBlocks(from blockgen.Index) []blockgen.Block {
 	var longest []blockgen.Block
 	var chains = make(map[Fork][]blockgen.Block)
 	for fork := range m.receiveChannels {
