@@ -27,7 +27,7 @@ func (mesh *testMesh) SendBlockTo(f Fork, b blockgen.Block) bool {
 	return true
 }
 
-func (mesh *testMesh) ReceiveChan(f Fork) chan blockgen.Block {
+func (mesh *testMesh) RecvChan(f Fork) chan blockgen.Block {
 	return mesh.chanToNode
 }
 
@@ -247,7 +247,7 @@ func TestNodeEnable_NoNeighbourBlocks(t *testing.T) {
 	var node = NewNode(&mesh)
 	node.Enable(false)
 	go func() {
-		mesh.ReceiveChan(node) <- blockgen.GenerateGenesisBlock()
+		mesh.RecvChan(node) <- blockgen.GenerateGenesisBlock()
 	}()
 	node.ProcessNextBlock(blockgen.Data{})
 }

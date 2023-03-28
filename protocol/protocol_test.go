@@ -192,10 +192,10 @@ func TestListen_SendBlockOnlyToMentor(t *testing.T) {
 	var block = blockgen.GenerateNextFrom(blockgen.GenerateGenesisBlock(), blockgen.Data{1, 2, 3}, nil)
 	go remote.Listen(nil)
 	link.recvChan <- messages.PackMessage(messages.SendBlockMsg{Block: block, LastBlockIndex: 0})
-	var _ = <-mesh.ReceiveChan(mentor)
+	var _ = <-mesh.RecvChan(mentor)
 	var blockTo blockgen.Block
 	go func() {
-		blockTo = <-mesh.ReceiveChan(unwanted)
+		blockTo = <-mesh.RecvChan(unwanted)
 	}()
 	time.Sleep(time.Second)
 	if block.Equal(blockTo) {

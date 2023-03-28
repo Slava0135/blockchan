@@ -31,7 +31,7 @@ func TestForkMesh_SendAndReceive(t *testing.T) {
 	var forkTo = newTestFork(mesh)
 	var sent = blockgen.GenerateGenesisBlock()
 	go mesh.SendBlockBroadcast(forkFrom, sent)
-	var received = <-mesh.ReceiveChan(forkTo)
+	var received = <-mesh.RecvChan(forkTo)
 	if !sent.Equal(received) {
 		t.Fatalf("block was not sent")
 	}
@@ -44,7 +44,7 @@ func TestForkMeshSendBlockBroadcast_Loopback(t *testing.T) {
 	go mesh.SendBlockBroadcast(fork, block)
 	time.Sleep(time.Second)
 	select {
-	case <-mesh.ReceiveChan(fork):
+	case <-mesh.RecvChan(fork):
 		t.Fatalf("mesh tried to send block back to sender")
 	default:
 	}
@@ -60,10 +60,10 @@ func TestForkMeshSendBlockBroadcast_ThreeForks(t *testing.T) {
 	var block1 blockgen.Block
 	var block2 blockgen.Block
 	go func() {
-		block1 = <-mesh.ReceiveChan(forkTo1)
+		block1 = <-mesh.RecvChan(forkTo1)
 	}()
 	go func() {
-		block2 = <-mesh.ReceiveChan(forkTo2)
+		block2 = <-mesh.RecvChan(forkTo2)
 	}()
 	time.Sleep(time.Second)
 	if !block.Equal(block1) {
@@ -79,7 +79,7 @@ func TestForkMeshConnection_EarlyReceive(t *testing.T) {
 	var fork = newTestFork(mesh)
 	mesh.Disconnect(fork)
 	defer func() { _ = recover() }()
-	mesh.ReceiveChan(fork)
+	mesh.RecvChan(fork)
 	t.Fatalf("fork got receive channel without connecting to mesh")
 }
 
@@ -188,10 +188,10 @@ func TestFrokMeshSendBlockTo(t *testing.T) {
 	var blockTo blockgen.Block
 	var blockFrom blockgen.Block
 	go func() {
-		blockTo = <-mesh.ReceiveChan(forkTo)
+		blockTo = <-mesh.RecvChan(forkTo)
 	}()
 	go func() {
-		blockFrom = <-mesh.ReceiveChan(forkFrom)
+		blockFrom = <-mesh.RecvChan(forkFrom)
 	}()
 	time.Sleep(time.Second)
 	if !block.Equal(blockTo) {

@@ -21,7 +21,7 @@ type Mesh interface {
 	NeighbourBlocks(from blockgen.Index) []blockgen.Block
 	SendBlockBroadcast(from Fork, b blockgen.Block) bool
 	SendBlockTo(to Fork, b blockgen.Block) bool
-	ReceiveChan(Fork) chan blockgen.Block
+	RecvChan(Fork) chan blockgen.Block
 	Connect(Fork)
 	Disconnect(Fork)
 }
@@ -79,7 +79,7 @@ func (n *Node) ProcessNextBlock(data blockgen.Data) {
 		select {
 		case <-n.shutdown:
 			return
-		case b := <-n.Mesh.ReceiveChan(n):
+		case b := <-n.Mesh.RecvChan(n):
 			log.Infof("node %s received block %s", n.Name, b)
 			if len(n.blocks) == 0 {
 				if b.Index == 0 {

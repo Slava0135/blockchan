@@ -72,11 +72,11 @@ func (m *ForkMesh) SendBlockTo(to node.Fork, b blockgen.Block) bool {
 	if !b.HasValidHash() {
 		return false
 	}
-	m.ReceiveChan(to) <- b
+	m.RecvChan(to) <- b
 	return true
 }
 
-func (m *ForkMesh) ReceiveChan(f node.Fork) chan blockgen.Block {
+func (m *ForkMesh) RecvChan(f node.Fork) chan blockgen.Block {
 	if ch, ok := m.receiveChannels[f]; ok {
 		return ch
 	}
