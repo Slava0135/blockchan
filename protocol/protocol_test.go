@@ -175,7 +175,7 @@ func TestListen_SendBlockOnlyToMentor(t *testing.T) {
 	var _ = <-mesh.RecvChan(mentor)
 	var blockTo blockgen.Block
 	go func() {
-		blockTo = <-mesh.RecvChan(unwanted)
+		blockTo = (<-mesh.RecvChan(unwanted)).Block
 	}()
 	time.Sleep(time.Second)
 	if block.Equal(blockTo) {

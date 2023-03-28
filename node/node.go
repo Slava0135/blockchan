@@ -70,7 +70,8 @@ func (n *Node) ProcessNextBlock(data blockgen.Data) {
 		select {
 		case <-n.shutdown:
 			return
-		case b := <-n.Mesh.RecvChan(n):
+		case fb := <-n.Mesh.RecvChan(n):
+			var b = fb.Block
 			log.Infof("node %s received block %s", n.Name, b)
 			if len(n.blocks) == 0 {
 				if b.Index == 0 {
@@ -107,7 +108,7 @@ func (n *Node) ProcessNextBlock(data blockgen.Data) {
 			if b.Index <= n.Verified {
 				if !b.Equal(n.blocks[n.Verified]) {
 					log.Infof("node %s asks sender to drop unverified blocks because it verified other chain", n.Name)
-					n.Mesh.DropUnverifiedBlocks()
+					n.Mesh.DropUnverifiedBlocks(fb.From)
 				}
 			}
 			log.Infof("node %s ignores old block with hash %x", n.Name, b.Hash)

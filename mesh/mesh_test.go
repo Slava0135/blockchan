@@ -31,7 +31,7 @@ func TestForkMesh_SendAndReceive(t *testing.T) {
 	var sent = blockgen.GenerateGenesisBlock()
 	go mesh.SendBlockBroadcast(forkFrom, sent)
 	var received = <-mesh.RecvChan(forkTo)
-	if !sent.Equal(received) {
+	if !sent.Equal(received.Block) {
 		t.Fatalf("block was not sent")
 	}
 }
@@ -59,10 +59,10 @@ func TestForkMeshSendBlockBroadcast_ThreeForks(t *testing.T) {
 	var block1 blockgen.Block
 	var block2 blockgen.Block
 	go func() {
-		block1 = <-mesh.RecvChan(forkTo1)
+		block1 = (<-mesh.RecvChan(forkTo1)).Block
 	}()
 	go func() {
-		block2 = <-mesh.RecvChan(forkTo2)
+		block2 = (<-mesh.RecvChan(forkTo2)).Block
 	}()
 	time.Sleep(time.Second)
 	if !block.Equal(block1) {
@@ -121,7 +121,7 @@ func TestForkMeshSendBlock_DontSendInvalidBlock(t *testing.T) {
 	if mesh.SendBlockBroadcast(fork, block) {
 		t.Fatalf("sent invalid block")
 	}
-	if mesh.SendBlockTo(fork, block) {
+	if mesh.SendBlockTo(fork, ForkBlock{Block: block}) {
 		t.Fatalf("sent invalid block")
 	}
 }
@@ -183,14 +183,14 @@ func TestFrokMeshSendBlockTo(t *testing.T) {
 	var forkFrom = newTestFork(mesh)
 	var forkTo = newTestFork(mesh)
 	var block = blockgen.GenerateGenesisBlock()
-	go mesh.SendBlockTo(forkTo, block)
+	go mesh.SendBlockTo(forkTo, ForkBlock{Block: block})
 	var blockTo blockgen.Block
 	var blockFrom blockgen.Block
 	go func() {
-		blockTo = <-mesh.RecvChan(forkTo)
+		blockTo = (<-mesh.RecvChan(forkTo)).Block
 	}()
 	go func() {
-		blockFrom = <-mesh.RecvChan(forkFrom)
+		blockFrom = (<-mesh.RecvChan(forkFrom)).Block
 	}()
 	time.Sleep(time.Second)
 	if !block.Equal(blockTo) {

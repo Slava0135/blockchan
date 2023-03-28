@@ -10,19 +10,24 @@ import (
 type Mesh interface {
 	RequestBlocks(from blockgen.Index) []blockgen.Block
 	SendBlockBroadcast(from Fork, b blockgen.Block) bool
-	SendBlockTo(to Fork, b blockgen.Block) bool
-	RecvChan(Fork) chan blockgen.Block
+	SendBlockTo(to Fork, b ForkBlock) bool
+	RecvChan(Fork) chan ForkBlock
 	Connect(Fork)
 	Disconnect(Fork)
-	DropUnverifiedBlocks()
+	DropUnverifiedBlocks(Fork)
 }
 
 type Fork interface {
 	Blocks(from blockgen.Index) []blockgen.Block
 }
 
+type ForkBlock struct {
+	Block blockgen.Block
+	From  Fork
+}
+
 type ForkMesh struct {
-	receiveChannels map[Fork]chan blockgen.Block
+	receiveChannels map[Fork]chan ForkBlock
 }
 
 func (m *ForkMesh) RequestBlocks(from blockgen.Index) []blockgen.Block {
@@ -73,24 +78,25 @@ func (m *ForkMesh) SendBlockBroadcast(from Fork, b blockgen.Block) bool {
 	}
 	for fork, ch := range m.receiveChannels {
 		if fork != from {
-			var ch = ch
+			ch := ch
+			from := from
 			go func() {
-				ch <- b
+				ch <- ForkBlock{Block: b, From: from}
 			}()
 		}
 	}
 	return true
 }
 
-func (m *ForkMesh) SendBlockTo(to Fork, b blockgen.Block) bool {
-	if !b.HasValidHash() {
+func (m *ForkMesh) SendBlockTo(to Fork, b ForkBlock) bool {
+	if !b.Block.HasValidHash() {
 		return false
 	}
 	m.RecvChan(to) <- b
 	return true
 }
 
-func (m *ForkMesh) RecvChan(f Fork) chan blockgen.Block {
+func (m *ForkMesh) RecvChan(f Fork) chan ForkBlock {
 	if ch, ok := m.receiveChannels[f]; ok {
 		return ch
 	}
@@ -99,18 +105,18 @@ func (m *ForkMesh) RecvChan(f Fork) chan blockgen.Block {
 }
 
 func (m *ForkMesh) Connect(f Fork) {
-	m.receiveChannels[f] = make(chan blockgen.Block)
+	m.receiveChannels[f] = make(chan ForkBlock)
 }
 
 func (m *ForkMesh) Disconnect(f Fork) {
 	delete(m.receiveChannels, f)
 }
 
-func (m *ForkMesh) DropUnverifiedBlocks() {
+func (m *ForkMesh) DropUnverifiedBlocks(f Fork) {
 }
 
 func NewForkMesh() *ForkMesh {
 	var mesh = &ForkMesh{}
-	mesh.receiveChannels = make(map[Fork]chan blockgen.Block)
+	mesh.receiveChannels = make(map[Fork]chan ForkBlock)
 	return mesh
 }
