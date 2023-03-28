@@ -1,8 +1,10 @@
 package main
 
 import (
+	"fmt"
 	"math/rand"
 	"net"
+	"os"
 	"slava0135/blockchan/blockgen"
 	"slava0135/blockchan/mesh"
 	"slava0135/blockchan/node"
@@ -57,16 +59,26 @@ func Launch(name string, address string, remotes []string, genesis bool) {
 }
 
 func runNode(node *node.Node, data string, genesis bool) {
+	filename := fmt.Sprintf("./%s.txt", node.Name)
+	os.Remove(filename)
+	f, _ := os.OpenFile(filename, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0644)
+	defer f.Close()
+
 	var seed int64
 	for _, v := range []byte(data) {
 		seed += int64(v)
 	}
 	var gen = rand.New(rand.NewSource(seed))
 	node.Enable(genesis)
+	var nextVerified = 0
 	for {
 		var d blockgen.Data
 		gen.Read(d[:])
 		node.ProcessNextBlock(d)
+		var blocks = node.Blocks(0)
+		for ; nextVerified <= int(node.Verified); nextVerified += 1 {
+			f.WriteString(blocks[nextVerified].String())
+		}
 	}
 }
 
