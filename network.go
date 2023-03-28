@@ -1,33 +1,14 @@
-package network
+package main
 
 import (
-	log "github.com/sirupsen/logrus"
 	"net"
 	"slava0135/blockchan/blockgen"
 	"slava0135/blockchan/mesh"
 	"slava0135/blockchan/node"
 	"slava0135/blockchan/protocol"
+
+	log "github.com/sirupsen/logrus"
 )
-
-type NetworkLink struct {
-	sendChannel chan []byte
-	recvChannel chan []byte
-}
-
-func (l *NetworkLink) SendChannel() chan []byte {
-	return l.sendChannel
-}
-
-func (l *NetworkLink) RecvChannel() chan []byte {
-	return l.recvChannel
-}
-
-func newNetworkLink() *NetworkLink {
-	var l = NetworkLink{}
-	l.sendChannel = make(chan []byte)
-	l.recvChannel = make(chan []byte)
-	return &l
-}
 
 func Launch(name string, address string, remotes []string, genesis bool) {
 	addr, err := net.ResolveUDPAddr("udp", address)
@@ -49,7 +30,7 @@ func Launch(name string, address string, remotes []string, genesis bool) {
 		if err != nil {
 			log.Panic(err)
 		}
-		var link = newNetworkLink()
+		var link = protocol.NewLink()
 		var fork = protocol.NewRemoteFork(mesh, link, node)
 		forks[addr.String()] = fork
 		log.Info("starting sender to ", v)
@@ -68,7 +49,7 @@ func Launch(name string, address string, remotes []string, genesis bool) {
 				log.Debugf("%s received message from %s of length %d bytes", conn.LocalAddr(), rem, rlen)
 				var msg = make([]byte, rlen)
 				copy(msg, buf[:rlen])
-				f.Link.RecvChannel() <- msg
+				f.Link.RecvChan <- msg
 			}
 		}
 	}
@@ -85,7 +66,7 @@ func runNode(node *node.Node, data string, genesis bool) {
 
 func runRemoteSender(conn *net.UDPConn, addr *net.UDPAddr, fork *protocol.RemoteFork) {
 	go func() {
-		for msg := range fork.Link.SendChannel() {
+		for msg := range fork.Link.SendChan {
 			log.Debugf("%s sending message to %s of length %d bytes", conn.LocalAddr(), addr, len(msg))
 			log.Debug(string(msg))
 			conn.WriteToUDP(msg, addr)

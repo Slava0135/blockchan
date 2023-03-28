@@ -4,24 +4,30 @@ import (
 	"slava0135/blockchan/blockgen"
 	"slava0135/blockchan/mesh"
 	"slava0135/blockchan/messages"
-	"slava0135/blockchan/node"
 	"time"
 )
 
 type RemoteFork struct {
 	Link      Link
-	mesh      node.Mesh
-	mentor    node.Fork
+	mesh      mesh.Mesh
+	mentor    mesh.Fork
 	blocksReq chan blockgen.Index
 	blocksAns chan []blockgen.Block
 }
 
-type Link interface {
-	SendChannel() chan []byte
-	RecvChannel() chan []byte
+type Link struct {
+	SendChan chan []byte
+	RecvChan chan []byte
 }
 
-func NewRemoteFork(mesh *mesh.ForkMesh, link Link, mentor node.Fork) *RemoteFork {
+func NewLink() Link {
+	var link = Link{}
+	link.SendChan = make(chan []byte)
+	link.RecvChan = make(chan []byte)
+	return link
+}
+
+func NewRemoteFork(mesh *mesh.ForkMesh, link Link, mentor mesh.Fork) *RemoteFork {
 	var f = &RemoteFork{}
 	f.Link = link
 	f.mesh = mesh
@@ -44,11 +50,11 @@ func (f *RemoteFork) Listen(shutdown chan struct{}) {
 		select {
 		case <-shutdown:
 			return
-		case b := <-f.mesh.ReceiveChan(f):
+		case b := <-f.mesh.RecvChan(f):
 			var chain = f.mentor.Blocks(0)
 			var lastIndex = chain[len(chain)-1].Index
-			f.Link.SendChannel() <- messages.PackMessage(messages.SendBlockMsg{Block: b, LastBlockIndex: uint64(lastIndex)})
-		case msg := <-f.Link.RecvChannel():
+			f.Link.SendChan <- messages.PackMessage(messages.SendBlockMsg{Block: b, LastBlockIndex: uint64(lastIndex)})
+		case msg := <-f.Link.RecvChan:
 			var i = messages.UnpackMessage(msg)
 			switch v := i.(type) {
 			case messages.SendBlockMsg:
@@ -62,13 +68,13 @@ func (f *RemoteFork) Listen(shutdown chan struct{}) {
 				for _, b := range chain {
 					var b = b
 					go func() {
-						f.Link.SendChannel() <- messages.PackMessage(messages.SendBlockMsg{Block: b, LastBlockIndex: uint64(lastIndex)})
+						f.Link.SendChan <- messages.PackMessage(messages.SendBlockMsg{Block: b, LastBlockIndex: uint64(lastIndex)})
 					}()
 				}
 			}
 		case index := <-f.blocksReq:
 			go func() {
-				f.Link.SendChannel() <- messages.PackMessage(messages.AskForBlocksMsg{Index: uint64(index)})
+				f.Link.SendChan <- messages.PackMessage(messages.AskForBlocksMsg{Index: uint64(index)})
 			}()
 			timeout := make(chan bool, 1)
 			go func() {
@@ -79,7 +85,7 @@ func (f *RemoteFork) Listen(shutdown chan struct{}) {
 			var expectedLen uint64 = 0
 			for {
 				select {
-				case msg := <-f.Link.RecvChannel():
+				case msg := <-f.Link.RecvChan:
 					var got = messages.UnpackMessage(msg)
 					var b, ok = got.(messages.SendBlockMsg)
 					if ok && b.Block.Index >= index {
