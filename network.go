@@ -1,6 +1,7 @@
 package main
 
 import (
+	"math/rand"
 	"net"
 	"slava0135/blockchan/blockgen"
 	"slava0135/blockchan/mesh"
@@ -56,10 +57,15 @@ func Launch(name string, address string, remotes []string, genesis bool) {
 }
 
 func runNode(node *node.Node, data string, genesis bool) {
+	var seed int64
+	for _, v := range []byte(data) {
+		seed += int64(v)
+	}
+	var gen = rand.New(rand.NewSource(seed))
 	node.Enable(genesis)
-	var d blockgen.Data
-	copy(d[:], []byte(data))
 	for {
+		var d blockgen.Data
+		gen.Read(d[:])
 		node.ProcessNextBlock(d)
 	}
 }
