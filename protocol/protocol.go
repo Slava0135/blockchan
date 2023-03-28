@@ -53,7 +53,11 @@ func (f *RemoteFork) Listen(shutdown chan struct{}) {
 		case b := <-f.mesh.RecvChan(f):
 			var chain = f.mentor.Blocks(0)
 			var lastIndex = chain[len(chain)-1].Index
-			f.Link.SendChan <- messages.PackMessage(messages.SendBlockMsg{Block: b.Block, LastBlockIndex: uint64(lastIndex)})
+			if b.Drop {
+				f.Link.SendChan <- messages.PackMessage(messages.SendBlockMsg{Block: b.Block, LastBlockIndex: uint64(lastIndex)})
+			} else {
+				f.Link.SendChan <- messages.PackMessage(messages.DropBlockMsg{Block: b.Block, LastBlockIndex: uint64(lastIndex)})
+			}
 		case msg := <-f.Link.RecvChan:
 			var i = messages.UnpackMessage(msg)
 			switch v := i.(type) {
@@ -71,6 +75,8 @@ func (f *RemoteFork) Listen(shutdown chan struct{}) {
 						f.Link.SendChan <- messages.PackMessage(messages.SendBlockMsg{Block: b, LastBlockIndex: uint64(lastIndex)})
 					}()
 				}
+			case messages.DropBlockMsg:
+				f.mesh.DropUnverifiedBlocks(f.mentor, v.Block)
 			}
 		case index := <-f.blocksReq:
 			go func() {
