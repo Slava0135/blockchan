@@ -3,6 +3,7 @@ package node
 import (
 	"slava0135/blockchan/blockgen"
 	"slava0135/blockchan/mesh"
+	"slava0135/blockchan/validate"
 	"testing"
 )
 
@@ -244,8 +245,29 @@ func TestNodeEnable_NoRequestBlocks(t *testing.T) {
 	mesh.networkBlocks = nil
 	var node = NewNode(&mesh)
 	node.Enable(false)
+	var genesis = blockgen.GenerateGenesisBlock()
 	go func() {
-		mesh.RecvChan(node) <- blockgen.GenerateGenesisBlock()
+		mesh.RecvChan(node) <- genesis
 	}()
 	node.ProcessNextBlock(blockgen.Data{})
+	if !validate.AreEqualChains(node.blocks, []blockgen.Block{genesis}) {
+		t.Fatalf("node did not accept genesis block")
+	} 
+}
+
+func TestNodeProcessNextBlock_NoBlocks(t *testing.T) {
+	var mesh = newTestMesh()
+	mesh.networkBlocks = nil
+	var node = NewNode(&mesh)
+	node.Enable(false)
+	var genesis = blockgen.GenerateGenesisBlock()
+	var next = blockgen.GenerateNextFrom(genesis, blockgen.Data{}, nil)
+	go func() {
+		mesh.RecvChan(node) <- next
+	}()
+	mesh.networkBlocks = []blockgen.Block{genesis, next}
+	node.ProcessNextBlock(blockgen.Data{})
+	if !validate.AreEqualChains(mesh.networkBlocks, node.blocks) {
+		t.Fatalf("empty node did not ask mesh for blocks when got non genesis block")
+	}
 }
