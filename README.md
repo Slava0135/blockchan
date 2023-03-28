@@ -61,7 +61,7 @@ Add `-v` flag for verbose output
 * One node should be configured to generate first (genesis) block.
 * Nodes compete with each other trying to generate a hash ending with 0x0000 for the next block.
 * When succeded node sends mined block to others and they verify it
-* If two nodes mined blocks at the same time then third node .verifies first block it got and tells "loser" to drop their block.
+* If two nodes mined blocks at the same time then third node verifies first block it got and tells "loser" to drop their block.
 * If node missed any blocks it asks other nodes to resend them. Longest chain is accepted.
 
 ## Structure
