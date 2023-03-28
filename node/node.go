@@ -86,6 +86,7 @@ func (n *Node) ProcessNextBlock(data blockgen.Data) {
 					n.blocks = n.Mesh.RequestBlocks(0)
 					if len(n.blocks) != 0 {
 						n.Verified = n.blocks[len(n.blocks)-1].Index
+						log.Infof("node %s verified chain (last verified: %d)", n.Name, n.Verified)
 					}
 				}
 				return
