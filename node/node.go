@@ -79,13 +79,22 @@ func (n *Node) ProcessNextBlock(data blockgen.Data) {
 				}
 				return
 			}
-			var chain []blockgen.Block
-			chain = append(chain, n.blocks[n.Verified:]...)
-			chain = append(chain, b)
-			if validate.IsValidChain(chain) {
-				log.Infof("node %s verified block with index %d", n.Name, b.Index)
-				n.blocks = append(n.blocks, b)
-				n.Verified = b.Index
+			var lastIndex = n.blocks[len(n.blocks)-1].Index
+			if b.Index == lastIndex+1 {
+				var chain []blockgen.Block
+				chain = append(chain, n.blocks[n.Verified:]...)
+				chain = append(chain, b)
+				if validate.IsValidChain(chain) {
+					log.Infof("node %s verified block with index %d", n.Name, b.Index)
+					n.blocks = append(n.blocks, b)
+					n.Verified = b.Index
+					return
+				}
+			}
+			if b.Index > lastIndex+1 {
+				var received = n.Mesh.RequestBlocks(n.Verified+1)
+				n.blocks = n.blocks[:n.Verified+1]
+				n.blocks = append(n.blocks, received...)
 				return
 			}
 		case b := <-nextBlock:
