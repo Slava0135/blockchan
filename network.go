@@ -65,7 +65,7 @@ func runNode(node *node.Node, data string, genesis bool) {
 	if err == nil {
 		defer f.Close()
 	} else {
-		log.Errorf("node %s failed to open file %s: %v", err)
+		log.Errorf("node %s failed to open file %s: %v", node.Name, filename, err)
 	}
 
 	var seed int64
