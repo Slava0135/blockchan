@@ -9,18 +9,6 @@ import (
 	"time"
 )
 
-type testLink struct {
-	sendChan chan []byte
-	recvChan chan []byte
-}
-
-func newTestLink() *testLink {
-	var link = &testLink{}
-	link.sendChan = make(chan []byte)
-	link.recvChan = make(chan []byte)
-	return link
-}
-
 type testFork struct {
 	blocks []blockgen.Block
 }
@@ -29,16 +17,8 @@ func (f *testFork) Blocks(from blockgen.Index) []blockgen.Block {
 	return f.blocks[from:]
 }
 
-func (l *testLink) SendChannel() chan []byte {
-	return l.sendChan
-}
-
-func (l *testLink) RecvChannel() chan []byte {
-	return l.recvChan
-}
-
 func TestListen_SendBlock(t *testing.T) {
-	var link = newTestLink()
+	var link = NewLink()
 	var mesh = mesh.NewForkMesh()
 	var mentor = &testFork{}
 	var remote = NewRemoteFork(mesh, link, mentor)
@@ -47,7 +27,7 @@ func TestListen_SendBlock(t *testing.T) {
 	go remote.Listen(nil)
 	time.Sleep(time.Second)
 	go mesh.SendBlockBroadcast(nil, block)
-	var unpacked = messages.UnpackMessage(<-link.sendChan)
+	var unpacked = messages.UnpackMessage(<-link.SendChan)
 	var received, ok = unpacked.(messages.SendBlockMsg)
 	if !ok {
 		t.Fatalf("wrong message type")
@@ -58,7 +38,7 @@ func TestListen_SendBlock(t *testing.T) {
 }
 
 func TestBlocks(t *testing.T) {
-	var link = newTestLink()
+	var link = NewLink()
 	var mesh = mesh.NewForkMesh()
 	var remote = NewRemoteFork(mesh, link, nil)
 	var chain = []blockgen.Block{blockgen.GenerateGenesisBlock()}
@@ -67,9 +47,9 @@ func TestBlocks(t *testing.T) {
 	}
 	var lastIndex = chain[len(chain)-1].Index
 	go func() {
-		<-link.sendChan
+		<-link.SendChan
 		for i := range chain {
-			link.recvChan <- messages.PackMessage(messages.SendBlockMsg{Block: chain[i], LastBlockIndex: uint64(lastIndex)})
+			link.RecvChan <- messages.PackMessage(messages.SendBlockMsg{Block: chain[i], LastBlockIndex: uint64(lastIndex)})
 		}
 	}()
 	go remote.Listen(nil)
@@ -80,7 +60,7 @@ func TestBlocks(t *testing.T) {
 }
 
 func TestBlocks_Unsorted(t *testing.T) {
-	var link = newTestLink()
+	var link = NewLink()
 	var mesh = mesh.NewForkMesh()
 	var remote = NewRemoteFork(mesh, link, nil)
 	var chain = []blockgen.Block{blockgen.GenerateGenesisBlock()}
@@ -89,11 +69,11 @@ func TestBlocks_Unsorted(t *testing.T) {
 	}
 	var lastIndex = chain[3].Index
 	go func() {
-		<-link.sendChan
-		link.recvChan <- messages.PackMessage(messages.SendBlockMsg{Block: chain[3], LastBlockIndex: uint64(lastIndex)})
-		link.recvChan <- messages.PackMessage(messages.SendBlockMsg{Block: chain[1], LastBlockIndex: uint64(lastIndex)})
-		link.recvChan <- messages.PackMessage(messages.SendBlockMsg{Block: chain[2], LastBlockIndex: uint64(lastIndex)})
-		link.recvChan <- messages.PackMessage(messages.SendBlockMsg{Block: chain[0], LastBlockIndex: uint64(lastIndex)})
+		<-link.SendChan
+		link.RecvChan <- messages.PackMessage(messages.SendBlockMsg{Block: chain[3], LastBlockIndex: uint64(lastIndex)})
+		link.RecvChan <- messages.PackMessage(messages.SendBlockMsg{Block: chain[1], LastBlockIndex: uint64(lastIndex)})
+		link.RecvChan <- messages.PackMessage(messages.SendBlockMsg{Block: chain[2], LastBlockIndex: uint64(lastIndex)})
+		link.RecvChan <- messages.PackMessage(messages.SendBlockMsg{Block: chain[0], LastBlockIndex: uint64(lastIndex)})
 	}()
 	go remote.Listen(nil)
 	var got = remote.Blocks(0)
@@ -103,7 +83,7 @@ func TestBlocks_Unsorted(t *testing.T) {
 }
 
 func TestBlocks_DoubleSend(t *testing.T) {
-	var link = newTestLink()
+	var link = NewLink()
 	var mesh = mesh.NewForkMesh()
 	var remote = NewRemoteFork(mesh, link, nil)
 	var chain = []blockgen.Block{blockgen.GenerateGenesisBlock()}
@@ -112,12 +92,12 @@ func TestBlocks_DoubleSend(t *testing.T) {
 	}
 	var lastIndex = chain[3].Index
 	go func() {
-		<-link.sendChan
-		link.recvChan <- messages.PackMessage(messages.SendBlockMsg{Block: chain[3], LastBlockIndex: uint64(lastIndex)})
-		link.recvChan <- messages.PackMessage(messages.SendBlockMsg{Block: chain[1], LastBlockIndex: uint64(lastIndex)})
-		link.recvChan <- messages.PackMessage(messages.SendBlockMsg{Block: chain[1], LastBlockIndex: uint64(lastIndex)})
-		link.recvChan <- messages.PackMessage(messages.SendBlockMsg{Block: chain[2], LastBlockIndex: uint64(lastIndex)})
-		link.recvChan <- messages.PackMessage(messages.SendBlockMsg{Block: chain[0], LastBlockIndex: uint64(lastIndex)})
+		<-link.SendChan
+		link.RecvChan <- messages.PackMessage(messages.SendBlockMsg{Block: chain[3], LastBlockIndex: uint64(lastIndex)})
+		link.RecvChan <- messages.PackMessage(messages.SendBlockMsg{Block: chain[1], LastBlockIndex: uint64(lastIndex)})
+		link.RecvChan <- messages.PackMessage(messages.SendBlockMsg{Block: chain[1], LastBlockIndex: uint64(lastIndex)})
+		link.RecvChan <- messages.PackMessage(messages.SendBlockMsg{Block: chain[2], LastBlockIndex: uint64(lastIndex)})
+		link.RecvChan <- messages.PackMessage(messages.SendBlockMsg{Block: chain[0], LastBlockIndex: uint64(lastIndex)})
 	}()
 	go remote.Listen(nil)
 	var got = remote.Blocks(0)
@@ -127,7 +107,7 @@ func TestBlocks_DoubleSend(t *testing.T) {
 }
 
 func TestBlocks_OldBlock(t *testing.T) {
-	var link = newTestLink()
+	var link = NewLink()
 	var mesh = mesh.NewForkMesh()
 	var remote = NewRemoteFork(mesh, link, nil)
 	var chain = []blockgen.Block{blockgen.GenerateGenesisBlock()}
@@ -136,11 +116,11 @@ func TestBlocks_OldBlock(t *testing.T) {
 	}
 	var lastIndex = chain[3].Index
 	go func() {
-		<-link.sendChan
-		link.recvChan <- messages.PackMessage(messages.SendBlockMsg{Block: chain[3], LastBlockIndex: uint64(lastIndex)})
-		link.recvChan <- messages.PackMessage(messages.SendBlockMsg{Block: chain[1], LastBlockIndex: uint64(lastIndex)})
-		link.recvChan <- messages.PackMessage(messages.SendBlockMsg{Block: chain[0], LastBlockIndex: uint64(lastIndex)})
-		link.recvChan <- messages.PackMessage(messages.SendBlockMsg{Block: chain[2], LastBlockIndex: uint64(lastIndex)})
+		<-link.SendChan
+		link.RecvChan <- messages.PackMessage(messages.SendBlockMsg{Block: chain[3], LastBlockIndex: uint64(lastIndex)})
+		link.RecvChan <- messages.PackMessage(messages.SendBlockMsg{Block: chain[1], LastBlockIndex: uint64(lastIndex)})
+		link.RecvChan <- messages.PackMessage(messages.SendBlockMsg{Block: chain[0], LastBlockIndex: uint64(lastIndex)})
+		link.RecvChan <- messages.PackMessage(messages.SendBlockMsg{Block: chain[2], LastBlockIndex: uint64(lastIndex)})
 	}()
 	go remote.Listen(nil)
 	var got = remote.Blocks(1)
@@ -158,10 +138,10 @@ func TestListen_AskedForBlocks(t *testing.T) {
 		chain = append(chain, blockgen.GenerateNextFrom(chain[i], blockgen.Data{}, nil))
 	}
 	mentor.blocks = chain
-	var linkSender = newTestLink()
-	var linkReceiver = &testLink{}
-	linkReceiver.recvChan = linkSender.sendChan
-	linkReceiver.sendChan = linkSender.recvChan
+	var linkSender = NewLink()
+	var linkReceiver = Link{}
+	linkReceiver.RecvChan = linkSender.SendChan
+	linkReceiver.SendChan = linkSender.RecvChan
 	var remoteSender = NewRemoteFork(mesh, linkSender, mentor)
 	var remoteReceiver = NewRemoteFork(mesh, linkReceiver, mentor)
 	go remoteSender.Listen(nil)
@@ -173,7 +153,7 @@ func TestListen_AskedForBlocks(t *testing.T) {
 }
 
 func TestShutdown(t *testing.T) {
-	var link = newTestLink()
+	var link = NewLink()
 	var mesh = mesh.NewForkMesh()
 	var shut = make(chan struct{})
 	var remote = NewRemoteFork(mesh, link, nil)
@@ -187,11 +167,11 @@ func TestListen_SendBlockOnlyToMentor(t *testing.T) {
 	mesh.Connect(mentor)
 	var unwanted = &testFork{}
 	mesh.Connect(unwanted)
-	var link = newTestLink()
+	var link = NewLink()
 	var remote = NewRemoteFork(mesh, link, mentor)
 	var block = blockgen.GenerateNextFrom(blockgen.GenerateGenesisBlock(), blockgen.Data{1, 2, 3}, nil)
 	go remote.Listen(nil)
-	link.recvChan <- messages.PackMessage(messages.SendBlockMsg{Block: block, LastBlockIndex: 0})
+	link.RecvChan <- messages.PackMessage(messages.SendBlockMsg{Block: block, LastBlockIndex: 0})
 	var _ = <-mesh.RecvChan(mentor)
 	var blockTo blockgen.Block
 	go func() {
@@ -207,15 +187,15 @@ func TestListen_AskForBlocks_NoBlocks(t *testing.T) {
 	var mesh = mesh.NewForkMesh()
 	var mentor = &testFork{}
 	mesh.Connect(mentor)
-	var link = newTestLink()
+	var link = NewLink()
 	var remote = NewRemoteFork(mesh, link, mentor)
 	go remote.Listen(nil)
-	link.recvChan <- messages.PackMessage(messages.AskForBlocksMsg{Index: 0})
+	link.RecvChan <- messages.PackMessage(messages.AskForBlocksMsg{Index: 0})
 	time.Sleep(time.Second)
 }
 
 func TestBlocks_Timeout(t *testing.T) {
-	var link = newTestLink()
+	var link = NewLink()
 	var mesh = mesh.NewForkMesh()
 	var remote = NewRemoteFork(mesh, link, nil)
 	go remote.Listen(nil)

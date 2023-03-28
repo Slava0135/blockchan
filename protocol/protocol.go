@@ -15,9 +15,16 @@ type RemoteFork struct {
 	blocksAns chan []blockgen.Block
 }
 
-type Link interface {
-	SendChannel() chan []byte
-	RecvChannel() chan []byte
+type Link struct {
+	SendChan chan []byte
+	RecvChan chan []byte
+}
+
+func NewLink() Link {
+	var link = Link{}
+	link.SendChan = make(chan []byte)
+	link.RecvChan = make(chan []byte)
+	return link
 }
 
 func NewRemoteFork(mesh *mesh.ForkMesh, link Link, mentor mesh.Fork) *RemoteFork {
@@ -46,8 +53,8 @@ func (f *RemoteFork) Listen(shutdown chan struct{}) {
 		case b := <-f.mesh.RecvChan(f):
 			var chain = f.mentor.Blocks(0)
 			var lastIndex = chain[len(chain)-1].Index
-			f.Link.SendChannel() <- messages.PackMessage(messages.SendBlockMsg{Block: b, LastBlockIndex: uint64(lastIndex)})
-		case msg := <-f.Link.RecvChannel():
+			f.Link.SendChan <- messages.PackMessage(messages.SendBlockMsg{Block: b, LastBlockIndex: uint64(lastIndex)})
+		case msg := <-f.Link.RecvChan:
 			var i = messages.UnpackMessage(msg)
 			switch v := i.(type) {
 			case messages.SendBlockMsg:
@@ -61,13 +68,13 @@ func (f *RemoteFork) Listen(shutdown chan struct{}) {
 				for _, b := range chain {
 					var b = b
 					go func() {
-						f.Link.SendChannel() <- messages.PackMessage(messages.SendBlockMsg{Block: b, LastBlockIndex: uint64(lastIndex)})
+						f.Link.SendChan <- messages.PackMessage(messages.SendBlockMsg{Block: b, LastBlockIndex: uint64(lastIndex)})
 					}()
 				}
 			}
 		case index := <-f.blocksReq:
 			go func() {
-				f.Link.SendChannel() <- messages.PackMessage(messages.AskForBlocksMsg{Index: uint64(index)})
+				f.Link.SendChan <- messages.PackMessage(messages.AskForBlocksMsg{Index: uint64(index)})
 			}()
 			timeout := make(chan bool, 1)
 			go func() {
@@ -78,7 +85,7 @@ func (f *RemoteFork) Listen(shutdown chan struct{}) {
 			var expectedLen uint64 = 0
 			for {
 				select {
-				case msg := <-f.Link.RecvChannel():
+				case msg := <-f.Link.RecvChan:
 					var got = messages.UnpackMessage(msg)
 					var b, ok = got.(messages.SendBlockMsg)
 					if ok && b.Block.Index >= index {
