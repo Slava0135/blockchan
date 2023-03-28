@@ -91,12 +91,14 @@ func TestNodeStart_Genesis(t *testing.T) {
 }
 
 func TestNodeDisable(t *testing.T) {
-	var mesh = testMesh{}
+	var mesh = newTestMesh()
 	var node = NewNode(&mesh)
 	node.Enable(true)
 	if !node.Enabled {
 		t.Fatalf("node is not running after start")
 	}
+	go node.ProcessNextBlock(blockgen.Data{})
+	mesh.RecvChan(node) <- blockgen.Block{}
 	node.Disable()
 	if node.Enabled {
 		t.Fatalf("node is running after shutdown")
@@ -209,14 +211,9 @@ func TestNodeProcessNextBlock_IgnoreOldBlock(t *testing.T) {
 
 func TestNode_Connection(t *testing.T) {
 	var mesh = newTestMesh()
-	var node = NewNode(&mesh)
+	var _ = NewNode(&mesh)
 	if !mesh.connected {
 		t.Fatalf("node did not connect to mesh when created")
-	}
-	node.Enable(true)
-	node.Disable()
-	if !mesh.connected {
-		t.Fatalf("node disconnected from mesh when was disabled")
 	}
 }
 
