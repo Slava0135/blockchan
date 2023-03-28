@@ -2,6 +2,7 @@ package node
 
 import (
 	"slava0135/blockchan/blockgen"
+	"slava0135/blockchan/mesh"
 	"testing"
 )
 
@@ -18,24 +19,24 @@ func (mesh *testMesh) NeighbourBlocks(from blockgen.Index) []blockgen.Block {
 	return mesh.networkBlocks[from:]
 }
 
-func (mesh *testMesh) SendBlockBroadcast(f Fork, b blockgen.Block) bool {
+func (mesh *testMesh) SendBlockBroadcast(f mesh.Fork, b blockgen.Block) bool {
 	mesh.receivedBlocks = append(mesh.receivedBlocks, b)
 	return true
 }
 
-func (mesh *testMesh) SendBlockTo(f Fork, b blockgen.Block) bool {
+func (mesh *testMesh) SendBlockTo(f mesh.Fork, b blockgen.Block) bool {
 	return true
 }
 
-func (mesh *testMesh) RecvChan(f Fork) chan blockgen.Block {
+func (mesh *testMesh) RecvChan(f mesh.Fork) chan blockgen.Block {
 	return mesh.chanToNode
 }
 
-func (mesh *testMesh) Connect(f Fork) {
+func (mesh *testMesh) Connect(f mesh.Fork) {
 	mesh.connected = true
 }
 
-func (mesh *testMesh) Disconnect(f Fork) {
+func (mesh *testMesh) Disconnect(f mesh.Fork) {
 	mesh.connected = false
 }
 

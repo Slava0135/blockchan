@@ -2,7 +2,6 @@ package mesh
 
 import (
 	"slava0135/blockchan/blockgen"
-	"slava0135/blockchan/node"
 	"testing"
 	"time"
 )
@@ -15,14 +14,14 @@ func (f *testFork) Blocks(from blockgen.Index) []blockgen.Block {
 	return f.blocks[from:]
 }
 
-func newTestFork(mesh node.Mesh) *testFork {
+func newTestFork(mesh Mesh) *testFork {
 	var fork = &testFork{}
 	mesh.Connect(fork)
 	return fork
 }
 
 func TestForkMesh_Interface(t *testing.T) {
-	var _ node.Mesh = &ForkMesh{}
+	var _ Mesh = &ForkMesh{}
 }
 
 func TestForkMesh_SendAndReceive(t *testing.T) {

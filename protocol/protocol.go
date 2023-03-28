@@ -4,14 +4,13 @@ import (
 	"slava0135/blockchan/blockgen"
 	"slava0135/blockchan/mesh"
 	"slava0135/blockchan/messages"
-	"slava0135/blockchan/node"
 	"time"
 )
 
 type RemoteFork struct {
 	Link      Link
-	mesh      node.Mesh
-	mentor    node.Fork
+	mesh      mesh.Mesh
+	mentor    mesh.Fork
 	blocksReq chan blockgen.Index
 	blocksAns chan []blockgen.Block
 }
@@ -21,7 +20,7 @@ type Link interface {
 	RecvChannel() chan []byte
 }
 
-func NewRemoteFork(mesh *mesh.ForkMesh, link Link, mentor node.Fork) *RemoteFork {
+func NewRemoteFork(mesh *mesh.ForkMesh, link Link, mentor mesh.Fork) *RemoteFork {
 	var f = &RemoteFork{}
 	f.Link = link
 	f.mesh = mesh

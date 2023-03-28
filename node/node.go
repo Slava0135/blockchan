@@ -2,32 +2,20 @@ package node
 
 import (
 	"slava0135/blockchan/blockgen"
+	"slava0135/blockchan/mesh"
 	"slava0135/blockchan/validate"
 
 	log "github.com/sirupsen/logrus"
 )
 
 type Node struct {
-	Mesh      Mesh
+	Mesh      mesh.Mesh
 	Enabled   bool
 	Verified  blockgen.Index
 	Name      string
 	blocks    []blockgen.Block
 	shutdown  chan struct{}
 	inProcess *bool
-}
-
-type Mesh interface {
-	NeighbourBlocks(from blockgen.Index) []blockgen.Block
-	SendBlockBroadcast(from Fork, b blockgen.Block) bool
-	SendBlockTo(to Fork, b blockgen.Block) bool
-	RecvChan(Fork) chan blockgen.Block
-	Connect(Fork)
-	Disconnect(Fork)
-}
-
-type Fork interface {
-	Blocks(from blockgen.Index) []blockgen.Block
 }
 
 func (n *Node) Blocks(from blockgen.Index) []blockgen.Block {
@@ -37,7 +25,7 @@ func (n *Node) Blocks(from blockgen.Index) []blockgen.Block {
 	return nil
 }
 
-func NewNode(mesh Mesh) *Node {
+func NewNode(mesh mesh.Mesh) *Node {
 	var node = &Node{}
 	node.Mesh = mesh
 	node.shutdown = make(chan struct{})
