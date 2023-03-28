@@ -61,7 +61,7 @@ func (n *Node) ProcessNextBlock(data blockgen.Data) {
 	if len(n.blocks) > 0 {
 		go generateNextFrom(n.blocks[len(n.blocks)-1], data, nextBlock, cancel)
 	} else {
-		log.Warnf("node %s does not have any blocks", n.Name)
+		log.Warnf("node %s does not have any blocks!", n.Name)
 	}
 	for {
 		select {
@@ -79,35 +79,13 @@ func (n *Node) ProcessNextBlock(data blockgen.Data) {
 				}
 				return
 			}
-			var lastThis = n.blocks[len(n.blocks)-1].Index
-			if n.Verified >= b.Index {
-				log.Infof("node %s ignores old block", n.Name)
-				continue
-			}
 			var chain []blockgen.Block
-			if lastThis+1 == b.Index {
-				log.Infof("node %s tries to append block", n.Name)
-				chain = append(chain, n.blocks...)
-				chain = append(chain, b)
-				if validate.IsValidChain(chain) {
-					n.blocks = append(n.blocks, b)
-					log.Infof("node %s verified block with index %d", n.Name, b.Index)
-					n.Verified = b.Index
-					return
-				} else {
-					log.Warnf("node %s rejected block with %s", n.Name, b)
-				}
-			} else {
-				log.Infof("node %s asks for missing neighbours blocks", n.Name)
-				chain = append(chain, n.blocks[:n.Verified+1]...)
-				chain = append(chain, n.Mesh.NeighbourBlocks(n.Verified+1)...)
-				if validate.IsValidChain(chain) {
-					log.Infof("node %s accepted new chain", n.Name)
-					n.blocks = chain
-					return
-				} else {
-					log.Warnf("node %s rejected new chain, last verified block: %d", n.Name, n.Verified)
-				}
+			chain = append(chain, n.blocks...)
+			chain = append(chain, b)
+			if validate.IsValidChain(chain) {
+				log.Infof("node %s verified block with index %d", n.Name, b.Index)
+				n.blocks = append(n.blocks, b)
+				return
 			}
 		case b := <-nextBlock:
 			log.Infof("node %s generated next block %s", n.Name, b)
