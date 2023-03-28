@@ -59,10 +59,14 @@ func Launch(name string, address string, remotes []string, genesis bool) {
 }
 
 func runNode(node *node.Node, data string, genesis bool) {
-	filename := fmt.Sprintf("./%s.txt", node.Name)
+	filename := fmt.Sprintf("/blockchan/%s.txt", node.Name)
 	os.Remove(filename)
-	f, _ := os.OpenFile(filename, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0644)
-	defer f.Close()
+	f, err := os.OpenFile(filename, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0644)
+	if err == nil {
+		defer f.Close()
+	} else {
+		log.Errorf("node %s failed to open file %s: %v", err)
+	}
 
 	var seed int64
 	for _, v := range []byte(data) {
@@ -75,9 +79,11 @@ func runNode(node *node.Node, data string, genesis bool) {
 		var d blockgen.Data
 		gen.Read(d[:])
 		node.ProcessNextBlock(d)
-		var blocks = node.Blocks(0)
-		for ; nextVerified <= int(node.Verified); nextVerified += 1 {
-			f.WriteString(blocks[nextVerified].String())
+		if err != nil {
+			var blocks = node.Blocks(0)
+			for ; nextVerified <= int(node.Verified); nextVerified += 1 {
+				f.WriteString(blocks[nextVerified].String())
+			}
 		}
 	}
 }
