@@ -24,6 +24,7 @@ type Fork interface {
 type ForkBlock struct {
 	Block blockgen.Block
 	From  Fork
+	Drop  bool
 }
 
 type ForkMesh struct {

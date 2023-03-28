@@ -73,6 +73,10 @@ func (n *Node) ProcessNextBlock(data blockgen.Data) {
 		case fb := <-n.Mesh.RecvChan(n):
 			var b = fb.Block
 			log.Infof("node %s received block %s", n.Name, b)
+			if fb.Drop {
+				log.Warnf("node %s was asked to drop unverified blocks (last verified: %d)", n.Name, n.Verified)
+				n.blocks = n.blocks[:n.Verified+1]
+			}
 			if len(n.blocks) == 0 {
 				if b.Index == 0 {
 					log.Infof("node %s accepted genesis block", n.Name)
