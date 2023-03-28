@@ -44,7 +44,13 @@ func (n *Node) Enable(genesis bool) {
 		n.Mesh.SendBlockBroadcast(n, n.blocks[0])
 	} else {
 		log.Infof("node %s asks for neighbours blocks", n.Name)
-		n.blocks = n.Mesh.NeighbourBlocks(0)
+		n.blocks = n.Mesh.RequestBlocks(0)
+		if len(n.blocks) != 0 {
+			n.Verified = n.blocks[len(n.blocks)-1].Index
+			log.Infof("node %s verified chain (last verified: %d)", n.Name, n.Verified)
+		} else {
+			log.Infof("node %s did not get blocks", n.Name)
+		}
 	}
 	n.Enabled = true
 }
@@ -61,54 +67,62 @@ func (n *Node) ProcessNextBlock(data blockgen.Data) {
 	if len(n.blocks) > 0 {
 		go generateNextFrom(n.blocks[len(n.blocks)-1], data, nextBlock, cancel)
 	} else {
-		log.Warnf("node %s does not have any blocks", n.Name)
+		log.Warnf("node %s does not have any blocks!", n.Name)
 	}
 	for {
 		select {
 		case <-n.shutdown:
 			return
-		case b := <-n.Mesh.RecvChan(n):
+		case fb := <-n.Mesh.RecvChan(n):
+			var b = fb.Block
 			log.Infof("node %s received block %s", n.Name, b)
+			if fb.Drop {
+				log.Warnf("node %s was asked to drop unverified blocks (last verified: %d)", n.Name, n.Verified)
+				n.blocks = n.blocks[:n.Verified+1]
+			}
 			if len(n.blocks) == 0 {
 				if b.Index == 0 {
 					log.Infof("node %s accepted genesis block", n.Name)
 					n.blocks = []blockgen.Block{b}
 				} else {
 					log.Infof("node %s still does not have any blocks", n.Name)
-					n.blocks = n.Mesh.NeighbourBlocks(0)
+					n.blocks = n.Mesh.RequestBlocks(0)
+					if len(n.blocks) != 0 {
+						n.Verified = n.blocks[len(n.blocks)-1].Index
+						log.Infof("node %s verified chain (last verified: %d)", n.Name, n.Verified)
+					}
 				}
 				return
 			}
-			var lastThis = n.blocks[len(n.blocks)-1].Index
-			if n.Verified >= b.Index {
-				log.Infof("node %s ignores old block", n.Name)
-				continue
-			}
-			var chain []blockgen.Block
-			if lastThis+1 == b.Index {
-				log.Infof("node %s tries to append block", n.Name)
-				chain = append(chain, n.blocks...)
+			var lastIndex = n.blocks[len(n.blocks)-1].Index
+			if b.Index == lastIndex+1 {
+				var chain []blockgen.Block
+				chain = append(chain, n.blocks[n.Verified:]...)
 				chain = append(chain, b)
 				if validate.IsValidChain(chain) {
-					n.blocks = append(n.blocks, b)
 					log.Infof("node %s verified block with index %d", n.Name, b.Index)
+					n.blocks = append(n.blocks, b)
 					n.Verified = b.Index
 					return
-				} else {
-					log.Warnf("node %s rejected block with %s", n.Name, b)
-				}
-			} else {
-				log.Infof("node %s asks for missing neighbours blocks", n.Name)
-				chain = append(chain, n.blocks[:n.Verified+1]...)
-				chain = append(chain, n.Mesh.NeighbourBlocks(n.Verified+1)...)
-				if validate.IsValidChain(chain) {
-					log.Infof("node %s accepted new chain", n.Name)
-					n.blocks = chain
-					return
-				} else {
-					log.Warnf("node %s rejected new chain, last verified block: %d", n.Name, n.Verified)
 				}
 			}
+			if b.Index > lastIndex+1 {
+				var index = n.Verified+1
+				log.Infof("node %s requesting blocks from network from index %d", n.Name, index)
+				var received = n.Mesh.RequestBlocks(index)
+				n.blocks = n.blocks[:index]
+				n.blocks = append(n.blocks, received...)
+				n.Verified = n.blocks[len(n.blocks)-1].Index
+				log.Infof("node %s verified chain (last verified: %d)", n.Name, n.Verified)
+				return
+			}
+			if b.Index <= n.Verified {
+				if !b.Equal(n.blocks[n.Verified]) {
+					log.Infof("node %s asks sender to drop unverified blocks because it verified other chain", n.Name)
+					n.Mesh.DropUnverifiedBlocks(fb.From, n.blocks[n.Verified])
+				}
+			}
+			log.Infof("node %s ignores old block with hash %x", n.Name, b.Hash)
 		case b := <-nextBlock:
 			log.Infof("node %s generated next block %s", n.Name, b)
 			n.blocks = append(n.blocks, b)

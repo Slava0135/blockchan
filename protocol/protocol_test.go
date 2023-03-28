@@ -129,7 +129,7 @@ func TestBlocks_OldBlock(t *testing.T) {
 	}
 }
 
-func TestListen_AskedForBlocks(t *testing.T) {
+func TestListen_RequestedBlocks(t *testing.T) {
 	var mesh = mesh.NewForkMesh()
 	var mentor = &testFork{}
 	mesh.Connect(mentor)
@@ -175,7 +175,7 @@ func TestListen_SendBlockOnlyToMentor(t *testing.T) {
 	var _ = <-mesh.RecvChan(mentor)
 	var blockTo blockgen.Block
 	go func() {
-		blockTo = <-mesh.RecvChan(unwanted)
+		blockTo = (<-mesh.RecvChan(unwanted)).Block
 	}()
 	time.Sleep(time.Second)
 	if block.Equal(blockTo) {
@@ -190,7 +190,7 @@ func TestListen_AskForBlocks_NoBlocks(t *testing.T) {
 	var link = NewLink()
 	var remote = NewRemoteFork(mesh, link, mentor)
 	go remote.Listen(nil)
-	link.RecvChan <- messages.PackMessage(messages.AskForBlocksMsg{Index: 0})
+	link.RecvChan <- messages.PackMessage(messages.RequestBlocksMsg{Index: 0})
 	time.Sleep(time.Second)
 }
 
@@ -200,4 +200,45 @@ func TestBlocks_Timeout(t *testing.T) {
 	var remote = NewRemoteFork(mesh, link, nil)
 	go remote.Listen(nil)
 	remote.Blocks(0)
+}
+
+func TestListen_AskDropBlock(t *testing.T) {
+	var link = NewLink()
+	var mesh = mesh.NewForkMesh()
+	var mentor = &testFork{}
+	var remote = NewRemoteFork(mesh, link, mentor)
+	var block = blockgen.GenerateNextFrom(blockgen.GenerateGenesisBlock(), blockgen.Data{1, 2, 3}, nil)
+	mentor.blocks = []blockgen.Block{block}
+	go remote.Listen(nil)
+	time.Sleep(time.Second)
+	go mesh.DropUnverifiedBlocks(remote, block)
+	var unpacked = messages.UnpackMessage(<-link.SendChan)
+	var received, ok = unpacked.(messages.DropBlockMsg)
+	if !ok {
+		t.Fatalf("wrong message type")
+	}
+	if !block.Equal(received.Block) {
+		t.Fatalf("got corrupted block through link")
+	}
+}
+
+
+func TestListen_DropBlock(t *testing.T) {
+	var link = NewLink()
+	var mesh = mesh.NewForkMesh()
+	var mentor = &testFork{}
+	mesh.Connect(mentor)
+	var remote = NewRemoteFork(mesh, link, mentor)
+	var block = blockgen.GenerateNextFrom(blockgen.GenerateGenesisBlock(), blockgen.Data{1, 2, 3}, nil)
+	mentor.blocks = []blockgen.Block{block}
+	go remote.Listen(nil)
+	link.RecvChan <- messages.PackMessage(messages.DropBlockMsg{Block: block, LastBlockIndex: 0})
+	var drop bool
+	go func() {
+		drop = (<-mesh.RecvChan(mentor)).Drop
+	}()
+	time.Sleep(time.Second)
+	if !drop {
+		t.Fatalf("mentor was not asked to drop blocks")
+	}
 }

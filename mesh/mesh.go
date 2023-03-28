@@ -3,27 +3,35 @@ package mesh
 import (
 	"slava0135/blockchan/blockgen"
 	"slava0135/blockchan/validate"
+
 	log "github.com/sirupsen/logrus"
 )
 
 type Mesh interface {
-	NeighbourBlocks(from blockgen.Index) []blockgen.Block
+	RequestBlocks(from blockgen.Index) []blockgen.Block
 	SendBlockBroadcast(from Fork, b blockgen.Block) bool
-	SendBlockTo(to Fork, b blockgen.Block) bool
-	RecvChan(Fork) chan blockgen.Block
+	SendBlockTo(to Fork, b ForkBlock) bool
+	RecvChan(Fork) chan ForkBlock
 	Connect(Fork)
 	Disconnect(Fork)
+	DropUnverifiedBlocks(Fork, blockgen.Block)
 }
 
 type Fork interface {
 	Blocks(from blockgen.Index) []blockgen.Block
 }
 
-type ForkMesh struct {
-	receiveChannels map[Fork]chan blockgen.Block
+type ForkBlock struct {
+	Block blockgen.Block
+	From  Fork
+	Drop  bool
 }
 
-func (m *ForkMesh) NeighbourBlocks(from blockgen.Index) []blockgen.Block {
+type ForkMesh struct {
+	receiveChannels map[Fork]chan ForkBlock
+}
+
+func (m *ForkMesh) RequestBlocks(from blockgen.Index) []blockgen.Block {
 	var longest []blockgen.Block
 	var chains = make(map[Fork][]blockgen.Block)
 	for fork := range m.receiveChannels {
@@ -71,24 +79,21 @@ func (m *ForkMesh) SendBlockBroadcast(from Fork, b blockgen.Block) bool {
 	}
 	for fork, ch := range m.receiveChannels {
 		if fork != from {
-			var ch = ch
-			go func() {
-				ch <- b
-			}()
+			ch <- ForkBlock{Block: b, From: from}
 		}
 	}
 	return true
 }
 
-func (m *ForkMesh) SendBlockTo(to Fork, b blockgen.Block) bool {
-	if !b.HasValidHash() {
+func (m *ForkMesh) SendBlockTo(to Fork, b ForkBlock) bool {
+	if !b.Block.HasValidHash() {
 		return false
 	}
 	m.RecvChan(to) <- b
 	return true
 }
 
-func (m *ForkMesh) RecvChan(f Fork) chan blockgen.Block {
+func (m *ForkMesh) RecvChan(f Fork) chan ForkBlock {
 	if ch, ok := m.receiveChannels[f]; ok {
 		return ch
 	}
@@ -97,15 +102,19 @@ func (m *ForkMesh) RecvChan(f Fork) chan blockgen.Block {
 }
 
 func (m *ForkMesh) Connect(f Fork) {
-	m.receiveChannels[f] = make(chan blockgen.Block)
+	m.receiveChannels[f] = make(chan ForkBlock, 13)
 }
 
 func (m *ForkMesh) Disconnect(f Fork) {
 	delete(m.receiveChannels, f)
 }
 
+func (m *ForkMesh) DropUnverifiedBlocks(f Fork, b blockgen.Block) {
+	m.RecvChan(f) <- ForkBlock{Block: b, Drop: true}
+}
+
 func NewForkMesh() *ForkMesh {
 	var mesh = &ForkMesh{}
-	mesh.receiveChannels = make(map[Fork]chan blockgen.Block)
+	mesh.receiveChannels = make(map[Fork]chan ForkBlock)
 	return mesh
 }
