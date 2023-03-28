@@ -79,11 +79,7 @@ func (m *ForkMesh) SendBlockBroadcast(from Fork, b blockgen.Block) bool {
 	}
 	for fork, ch := range m.receiveChannels {
 		if fork != from {
-			ch := ch
-			from := from
-			go func() {
-				ch <- ForkBlock{Block: b, From: from}
-			}()
+			ch <- ForkBlock{Block: b, From: from}
 		}
 	}
 	return true
@@ -106,7 +102,7 @@ func (m *ForkMesh) RecvChan(f Fork) chan ForkBlock {
 }
 
 func (m *ForkMesh) Connect(f Fork) {
-	m.receiveChannels[f] = make(chan ForkBlock)
+	m.receiveChannels[f] = make(chan ForkBlock, 13)
 }
 
 func (m *ForkMesh) Disconnect(f Fork) {
@@ -114,9 +110,7 @@ func (m *ForkMesh) Disconnect(f Fork) {
 }
 
 func (m *ForkMesh) DropUnverifiedBlocks(f Fork, b blockgen.Block) {
-	go func() {
-		m.RecvChan(f) <- ForkBlock{Block: b, Drop: true}
-	}()
+	m.RecvChan(f) <- ForkBlock{Block: b, Drop: true}
 }
 
 func NewForkMesh() *ForkMesh {
