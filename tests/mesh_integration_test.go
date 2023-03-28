@@ -27,7 +27,9 @@ func nodeData(n byte) blockgen.Data {
 func TestMeshAndTwoNodes(t *testing.T) {
 	var mesh = mesh.NewForkMesh()
 	var node1 = node.NewNode(mesh)
+	node1.Name = "FIRST"
 	var node2 = node.NewNode(mesh)
+	node2.Name = "SECOND"
 	var stop = false
 	go runNode(node1, nodeData(0x11), &stop, true)
 	time.Sleep(10 * time.Millisecond)
@@ -46,8 +48,11 @@ func TestMeshAndTwoNodes(t *testing.T) {
 func TestMeshAndThreeNodes(t *testing.T) {
 	var mesh = mesh.NewForkMesh()
 	var node1 = node.NewNode(mesh)
+	node1.Name = "FIRST"
 	var node2 = node.NewNode(mesh)
+	node2.Name = "SECOND"
 	var node3 = node.NewNode(mesh)
+	node3.Name = "THIRD"
 	var stop = false
 	go runNode(node1, nodeData(0x11), &stop, true)
 	time.Sleep(10 * time.Millisecond)
