@@ -201,3 +201,44 @@ func TestBlocks_Timeout(t *testing.T) {
 	go remote.Listen(nil)
 	remote.Blocks(0)
 }
+
+func TestListen_AskDropBlock(t *testing.T) {
+	var link = NewLink()
+	var mesh = mesh.NewForkMesh()
+	var mentor = &testFork{}
+	var remote = NewRemoteFork(mesh, link, mentor)
+	var block = blockgen.GenerateNextFrom(blockgen.GenerateGenesisBlock(), blockgen.Data{1, 2, 3}, nil)
+	mentor.blocks = []blockgen.Block{block}
+	go remote.Listen(nil)
+	time.Sleep(time.Second)
+	go mesh.DropUnverifiedBlocks(remote, block)
+	var unpacked = messages.UnpackMessage(<-link.SendChan)
+	var received, ok = unpacked.(messages.DropBlockMsg)
+	if !ok {
+		t.Fatalf("wrong message type")
+	}
+	if !block.Equal(received.Block) {
+		t.Fatalf("got corrupted block through link")
+	}
+}
+
+
+func TestListen_DropBlock(t *testing.T) {
+	var link = NewLink()
+	var mesh = mesh.NewForkMesh()
+	var mentor = &testFork{}
+	mesh.Connect(mentor)
+	var remote = NewRemoteFork(mesh, link, mentor)
+	var block = blockgen.GenerateNextFrom(blockgen.GenerateGenesisBlock(), blockgen.Data{1, 2, 3}, nil)
+	mentor.blocks = []blockgen.Block{block}
+	go remote.Listen(nil)
+	link.RecvChan <- messages.PackMessage(messages.DropBlockMsg{Block: block, LastBlockIndex: 0})
+	var drop bool
+	go func() {
+		drop = (<-mesh.RecvChan(mentor)).Drop
+	}()
+	time.Sleep(time.Second)
+	if !drop {
+		t.Fatalf("mentor was not asked to drop blocks")
+	}
+}
