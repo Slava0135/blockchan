@@ -45,6 +45,9 @@ func (n *Node) Enable(genesis bool) {
 	} else {
 		log.Infof("node %s asks for neighbours blocks", n.Name)
 		n.blocks = n.Mesh.RequestBlocks(0)
+		if len(n.blocks) != 0 {
+			n.Verified = n.blocks[len(n.blocks)-1].Index
+		}
 	}
 	n.Enabled = true
 }
@@ -76,6 +79,9 @@ func (n *Node) ProcessNextBlock(data blockgen.Data) {
 				} else {
 					log.Infof("node %s still does not have any blocks", n.Name)
 					n.blocks = n.Mesh.RequestBlocks(0)
+					if len(n.blocks) != 0 {
+						n.Verified = n.blocks[len(n.blocks)-1].Index
+					}
 				}
 				return
 			}
@@ -95,7 +101,15 @@ func (n *Node) ProcessNextBlock(data blockgen.Data) {
 				var received = n.Mesh.RequestBlocks(n.Verified+1)
 				n.blocks = n.blocks[:n.Verified+1]
 				n.blocks = append(n.blocks, received...)
+				n.Verified = n.blocks[len(n.blocks)-1].Index
 				return
+			}
+			if b.Index <= n.Verified {
+				log.Infof("node %s ignores old block with hash %x", n.Name, b.Hash)
+				if !b.Equal(n.blocks[n.Verified]) {
+					log.Infof("node %s asks sender to drop unverified blocks because it verified other chain", n.Name)
+					n.Mesh.DropUnverifiedBlocks()
+				}
 			}
 		case b := <-nextBlock:
 			log.Infof("node %s generated next block %s", n.Name, b)

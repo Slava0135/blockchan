@@ -13,6 +13,7 @@ type testMesh struct {
 	receivedBlocks      []blockgen.Block
 	chanToNode          chan blockgen.Block
 	connected           bool
+	askedToDropBlocks   bool
 }
 
 func (mesh *testMesh) RequestBlocks(from blockgen.Index) []blockgen.Block {
@@ -39,6 +40,10 @@ func (mesh *testMesh) Connect(f mesh.Fork) {
 
 func (mesh *testMesh) Disconnect(f mesh.Fork) {
 	mesh.connected = false
+}
+
+func (mesh *testMesh) DropUnverifiedBlocks() {
+	mesh.askedToDropBlocks = true
 }
 
 func newTestMesh() testMesh {
@@ -269,5 +274,18 @@ func TestNodeProcessNextBlock_NoBlocks(t *testing.T) {
 	node.ProcessNextBlock(blockgen.Data{})
 	if !validate.AreEqualChains(mesh.networkBlocks, node.blocks) {
 		t.Fatalf("empty node did not ask mesh for blocks when got non genesis block")
+	}
+}
+
+func TestNodeProcessNextBlock_AskToDropUnverified(t *testing.T) {
+	var mesh = newTestMesh()
+	var node = NewNode(&mesh)
+	node.Enable(false)
+	var prev = mesh.networkBlocks[len(mesh.networkBlocks)-2]
+	var other = blockgen.GenerateNextFrom(prev, blockgen.Data{42}, nil)
+	go node.ProcessNextBlock(blockgen.Data{})
+	mesh.RecvChan(node) <- other
+	if !mesh.askedToDropBlocks {
+		t.Fatalf("node did not ask other fork to drop their block")
 	}
 }

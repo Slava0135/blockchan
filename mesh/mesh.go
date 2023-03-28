@@ -14,6 +14,7 @@ type Mesh interface {
 	RecvChan(Fork) chan blockgen.Block
 	Connect(Fork)
 	Disconnect(Fork)
+	DropUnverifiedBlocks()
 }
 
 type Fork interface {
@@ -103,6 +104,9 @@ func (m *ForkMesh) Connect(f Fork) {
 
 func (m *ForkMesh) Disconnect(f Fork) {
 	delete(m.receiveChannels, f)
+}
+
+func (m *ForkMesh) DropUnverifiedBlocks() {
 }
 
 func NewForkMesh() *ForkMesh {
