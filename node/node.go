@@ -103,11 +103,13 @@ func (n *Node) ProcessNextBlock(data blockgen.Data) {
 				}
 			}
 			if b.Index > lastIndex+1 {
-				var received = n.Mesh.RequestBlocks(n.Verified+1)
-				n.blocks = n.blocks[:n.Verified+1]
+				var index = n.Verified+1
+				log.Infof("node %s requesting blocks from network from index %d", n.Name, index)
+				var received = n.Mesh.RequestBlocks(index)
+				n.blocks = n.blocks[:index]
 				n.blocks = append(n.blocks, received...)
 				n.Verified = n.blocks[len(n.blocks)-1].Index
-				log.Infof("node %s verified chain until index %d", n.Name, n.Verified)
+				log.Infof("node %s verified chain (last verified: %d)", n.Name, n.Verified)
 				return
 			}
 			if b.Index <= n.Verified {
