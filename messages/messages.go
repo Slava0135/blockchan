@@ -9,8 +9,9 @@ import (
 )
 
 const (
-	sendBlock    = "SENDING BLOCK"
-	askForBlocks = "ASKING FOR NEIGHBOURS BLOCKS"
+	sendBlock     = "SENDING BLOCK"
+	requestBlocks = "REQUESTING BLOCKS"
+	dropBlock     = "DROP BLOCK"
 )
 
 type SendBlockMsg struct {
@@ -18,8 +19,13 @@ type SendBlockMsg struct {
 	LastBlockIndex uint64
 }
 
-type AskForBlocksMsg struct {
+type RequestBlocksMsg struct {
 	Index uint64
+}
+
+type DropBlockMsg struct {
+	Block          blockgen.Block
+	LastBlockIndex uint64
 }
 
 func PackMessage(input any) []byte {
@@ -27,8 +33,11 @@ func PackMessage(input any) []byte {
 	case SendBlockMsg:
 		var encoded, _ = encode.Encode(v.Block)
 		return []byte(fmt.Sprintf("%s\n%d\n%s", sendBlock, v.LastBlockIndex, encoded))
-	case AskForBlocksMsg:
-		return []byte(fmt.Sprintf("%s\n%d", askForBlocks, v.Index))
+	case RequestBlocksMsg:
+		return []byte(fmt.Sprintf("%s\n%d", requestBlocks, v.Index))
+	case DropBlockMsg:
+		var encoded, _ = encode.Encode(v.Block)
+		return []byte(fmt.Sprintf("%s\n%d\n%s", dropBlock, v.LastBlockIndex, encoded))
 	}
 	return nil
 }
@@ -40,12 +49,16 @@ func UnpackMessage(text []byte) any {
 		var lastIndex, _ = strconv.ParseUint(string(slices[1]), 10, 64)
 		var decoded, _ = encode.Decode(slices[2])
 		return SendBlockMsg{decoded, lastIndex}
-	case askForBlocks:
+	case requestBlocks:
 		if len(slices) != 2 {
 			return nil
 		}
 		var index, _ = strconv.ParseUint(string(slices[1]), 10, 64)
-		return AskForBlocksMsg{index}
+		return RequestBlocksMsg{index}
+	case dropBlock:
+		var lastIndex, _ = strconv.ParseUint(string(slices[1]), 10, 64)
+		var decoded, _ = encode.Decode(slices[2])
+		return DropBlockMsg{decoded, lastIndex}
 	}
 	return nil
 }

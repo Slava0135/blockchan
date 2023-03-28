@@ -59,7 +59,7 @@ func (f *RemoteFork) Listen(shutdown chan struct{}) {
 			switch v := i.(type) {
 			case messages.SendBlockMsg:
 				f.mesh.SendBlockTo(f.mentor, mesh.ForkBlock{Block: v.Block, From: f})
-			case messages.AskForBlocksMsg:
+			case messages.RequestBlocksMsg:
 				var chain = f.mentor.Blocks(blockgen.Index(v.Index))
 				if len(chain) == 0 {
 					continue
@@ -74,7 +74,7 @@ func (f *RemoteFork) Listen(shutdown chan struct{}) {
 			}
 		case index := <-f.blocksReq:
 			go func() {
-				f.Link.SendChan <- messages.PackMessage(messages.AskForBlocksMsg{Index: uint64(index)})
+				f.Link.SendChan <- messages.PackMessage(messages.RequestBlocksMsg{Index: uint64(index)})
 			}()
 			timeout := make(chan bool, 1)
 			go func() {
