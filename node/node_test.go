@@ -42,7 +42,7 @@ func (mesh *testMesh) Disconnect(f mesh.Fork) {
 	mesh.connected = false
 }
 
-func (mesh *testMesh) DropUnverifiedBlocks(f mesh.Fork) {
+func (mesh *testMesh) DropUnverifiedBlocks(f mesh.Fork, b blockgen.Block) {
 	mesh.askedToDropBlocks = true
 }
 

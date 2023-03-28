@@ -112,7 +112,7 @@ func (n *Node) ProcessNextBlock(data blockgen.Data) {
 			if b.Index <= n.Verified {
 				if !b.Equal(n.blocks[n.Verified]) {
 					log.Infof("node %s asks sender to drop unverified blocks because it verified other chain", n.Name)
-					n.Mesh.DropUnverifiedBlocks(fb.From)
+					n.Mesh.DropUnverifiedBlocks(fb.From, n.blocks[n.Verified])
 				}
 			}
 			log.Infof("node %s ignores old block with hash %x", n.Name, b.Hash)

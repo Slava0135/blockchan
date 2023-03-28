@@ -178,7 +178,7 @@ func TestForkMeshRequestBlocks_SameIndex(t *testing.T) {
 	}
 }
 
-func TestFrokMeshSendBlockTo(t *testing.T) {
+func TestForkMeshSendBlockTo(t *testing.T) {
 	var mesh = NewForkMesh()
 	var forkFrom = newTestFork(mesh)
 	var forkTo = newTestFork(mesh)
@@ -198,5 +198,14 @@ func TestFrokMeshSendBlockTo(t *testing.T) {
 	}
 	if block.Equal(blockFrom) {
 		t.Fatalf("block was sent to original fork")
+	}
+}
+
+func TestForkMeshDropUnverified(t *testing.T) {
+	var mesh = NewForkMesh()
+	var fork = newTestFork(mesh)
+	mesh.DropUnverifiedBlocks(fork, blockgen.Block{})
+	if !(<-mesh.RecvChan(fork)).Drop {
+		t.Fatalf("mesh did not ask fork to drop unverified blocks")
 	}
 }
