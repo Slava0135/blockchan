@@ -1,5 +1,7 @@
 # Blockchan
 
+![blockchan](blockchan.png)
+
 [![Run Tests](https://github.com/Slava0135/blockchan/actions/workflows/test.yml/badge.svg)](https://github.com/Slava0135/blockchan/actions/workflows/test.yml)
 
 ## About
