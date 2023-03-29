@@ -308,3 +308,17 @@ func TestNodeProcessNextBlock_DropBlocks(t *testing.T) {
 		t.Fatalf("node did not drop blocks when asked")
 	}
 }
+
+func TestNodeProcessNextBlock_DropBlocks_IgnoreOldBlock(t *testing.T) {
+	var m = newTestMesh()
+	var node = NewNode(&m)
+	node.Enable(false)
+	var old = m.networkBlocks[0]
+	go func() {
+		m.RecvChan(node) <- mesh.ForkBlock{Block: old, Drop: true}
+	}()
+	node.ProcessNextBlock(blockgen.Data{})
+	if m.askedToDropBlocks {
+		t.Fatalf("node did not ignore old drop request")
+	}
+}
