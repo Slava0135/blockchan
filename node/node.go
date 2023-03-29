@@ -125,7 +125,7 @@ func (n *Node) ProcessNextBlock(data blockgen.Data) {
 				}
 			}
 			if b.Index <= n.Verified {
-				if !b.Equal(n.blocks[n.Verified]) {
+				if !fb.Drop && !b.Equal(n.blocks[n.Verified]) {
 					log.Infof("node %s asks sender to drop unverified blocks because it verified other chain", n.Name)
 					n.Mesh.DropUnverifiedBlocks(fb.From, n.blocks[n.Verified])
 				}
