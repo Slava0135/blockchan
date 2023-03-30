@@ -6,7 +6,6 @@ services:
     container_name: node0
     network_mode: host
     command:
-      - /app
       - -name
       - ZERO
       - -addr
@@ -22,7 +21,6 @@ services:
     container_name: node1
     network_mode: host
     command:
-      - /app
       - -name
       - FIRST
       - -addr
@@ -37,7 +35,6 @@ services:
     container_name: node2
     network_mode: host
     command:
-      - /app
       - -name
       - SECOND
       - -addr

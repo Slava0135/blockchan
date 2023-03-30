@@ -8,4 +8,4 @@ RUN CGO_ENABLED=0 go build -o app .
 
 FROM alpine:3.17.2
 COPY --from=builder /go/src/github.com/slava0135/blockchan/app /
-CMD ["/app"]
+ENTRYPOINT ["/app"]
