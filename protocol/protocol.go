@@ -13,6 +13,7 @@ type RemoteFork struct {
 	mentor    mesh.Fork
 	blocksReq chan blockgen.Index
 	blocksAns chan []blockgen.Block
+	timeout   time.Duration
 }
 
 type Link struct {
@@ -27,13 +28,14 @@ func NewLink() Link {
 	return link
 }
 
-func NewRemoteFork(mesh *mesh.ForkMesh, link Link, mentor mesh.Fork) *RemoteFork {
+func NewRemoteFork(mesh *mesh.ForkMesh, link Link, mentor mesh.Fork, timeout time.Duration) *RemoteFork {
 	var f = &RemoteFork{}
 	f.Link = link
 	f.mesh = mesh
 	f.mentor = mentor
 	f.blocksReq = make(chan blockgen.Index)
 	f.blocksAns = make(chan []blockgen.Block)
+	f.timeout = timeout
 	return f
 }
 
@@ -84,7 +86,7 @@ func (f *RemoteFork) Listen(shutdown chan struct{}) {
 			}()
 			timeout := make(chan bool, 1)
 			go func() {
-				time.Sleep(10 * time.Millisecond)
+				time.Sleep(f.timeout)
 				timeout <- true
 			}()
 			var chain = make(map[blockgen.Index]blockgen.Block)

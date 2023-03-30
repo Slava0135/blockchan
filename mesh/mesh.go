@@ -8,7 +8,7 @@ import (
 )
 
 type Mesh interface {
-	RequestBlocks(from blockgen.Index) []blockgen.Block
+	RequestBlocks(from blockgen.Index, caller Fork) []blockgen.Block
 	SendBlockBroadcast(from Fork, b blockgen.Block) bool
 	SendBlockTo(to Fork, b ForkBlock) bool
 	RecvChan(Fork) chan ForkBlock
@@ -31,10 +31,13 @@ type ForkMesh struct {
 	receiveChannels map[Fork]chan ForkBlock
 }
 
-func (m *ForkMesh) RequestBlocks(from blockgen.Index) []blockgen.Block {
+func (m *ForkMesh) RequestBlocks(from blockgen.Index, caller Fork) []blockgen.Block {
 	var longest []blockgen.Block
 	var chains = make(map[Fork][]blockgen.Block)
 	for fork := range m.receiveChannels {
+		if fork == caller {
+			continue
+		}
 		var chain = fork.Blocks(from)
 		if !validate.IsValidChain(chain) {
 			continue
@@ -44,33 +47,7 @@ func (m *ForkMesh) RequestBlocks(from blockgen.Index) []blockgen.Block {
 		}
 		chains[fork] = chain
 	}
-	var count = 0
-	var dupForks = make(map[Fork]int)
-	for fork, chain := range chains {
-		if len(chain) == len(longest) {
-			count += 1
-			var processed = false
-			for otherFork := range dupForks {
-				if validate.AreEqualChains(chain, chains[otherFork]) {
-					dupForks[otherFork] += 1
-					processed = true
-					break
-				}
-			}
-			if !processed {
-				dupForks[fork] = 1
-			}
-		}
-	}
-	var majorFork Fork
-	var majorNumber = 0
-	for fork, count := range dupForks {
-		if count > majorNumber {
-			majorFork = fork
-			majorNumber = count
-		}
-	}
-	return chains[majorFork]
+	return longest
 }
 
 func (m *ForkMesh) SendBlockBroadcast(from Fork, b blockgen.Block) bool {
