@@ -3,6 +3,7 @@ package mesh
 import (
 	"slava0135/blockchan/blockgen"
 	"slava0135/blockchan/validate"
+	"sync"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -29,6 +30,7 @@ type ForkBlock struct {
 
 type ForkMesh struct {
 	receiveChannels map[Fork]chan ForkBlock
+	mu              sync.Mutex
 }
 
 func (m *ForkMesh) RequestBlocks(from blockgen.Index, caller Fork) []blockgen.Block {
@@ -79,10 +81,14 @@ func (m *ForkMesh) RecvChan(f Fork) chan ForkBlock {
 }
 
 func (m *ForkMesh) Connect(f Fork) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	m.receiveChannels[f] = make(chan ForkBlock, 13)
 }
 
 func (m *ForkMesh) Disconnect(f Fork) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	delete(m.receiveChannels, f)
 }
 

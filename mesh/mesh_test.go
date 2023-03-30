@@ -200,3 +200,15 @@ func TestForkMeshDropUnverified(t *testing.T) {
 	}
 }
 
+func TestForkMeshConnect_Concurrent(t *testing.T) {
+	var mesh = NewForkMesh()
+	var forks []Fork
+	for i := 0; i < 100; i += 1 {
+		var fork = &testFork{}
+		forks = append(forks, fork)
+		go mesh.Connect(fork)
+	}
+	for _, v := range forks {
+		go mesh.Disconnect(v)
+	}
+}
