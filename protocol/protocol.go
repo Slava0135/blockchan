@@ -35,6 +35,7 @@ func NewRemoteFork(mesh *mesh.ForkMesh, link Link, mentor mesh.Fork, timeout tim
 	f.mentor = mentor
 	f.blocksReq = make(chan blockgen.Index)
 	f.blocksAns = make(chan []blockgen.Block)
+	f.timeout = timeout
 	return f
 }
 
