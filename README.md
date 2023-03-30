@@ -40,6 +40,8 @@ Usage of ./blockchan:
         generate genesis block on start?
   -name string
         node name for logging (default "NONAME")
+  -timeout duration
+        timeout for missing blocks request (default 100ms)
 ```
 
 Node connections are configured through arguments:

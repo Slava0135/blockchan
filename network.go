@@ -9,11 +9,12 @@ import (
 	"slava0135/blockchan/mesh"
 	"slava0135/blockchan/node"
 	"slava0135/blockchan/protocol"
+	"time"
 
 	log "github.com/sirupsen/logrus"
 )
 
-func Launch(name string, address string, remotes []string, genesis bool) {
+func Launch(name string, address string, remotes []string, genesis bool, timeout time.Duration) {
 	addr, err := net.ResolveUDPAddr("udp", address)
 	if err != nil {
 		log.Panic(err)
@@ -34,7 +35,7 @@ func Launch(name string, address string, remotes []string, genesis bool) {
 			log.Panic(err)
 		}
 		var link = protocol.NewLink()
-		var fork = protocol.NewRemoteFork(mesh, link, node)
+		var fork = protocol.NewRemoteFork(mesh, link, node, timeout)
 		forks[addr.String()] = fork
 		log.Info("starting sender to ", v)
 		go runRemoteSender(conn, addr, fork)
