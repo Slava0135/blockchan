@@ -16,7 +16,7 @@ type testMesh struct {
 	askedToDropBlocks   bool
 }
 
-func (mesh *testMesh) RequestBlocks(from blockgen.Index) []blockgen.Block {
+func (mesh *testMesh) RequestBlocks(from blockgen.Index, caller mesh.Fork) []blockgen.Block {
 	mesh.timesAskedForBlocks += 1
 	return mesh.networkBlocks[from:]
 }

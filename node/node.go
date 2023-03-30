@@ -44,7 +44,7 @@ func (n *Node) Enable(genesis bool) {
 		n.Mesh.SendBlockBroadcast(n, n.blocks[0])
 	} else {
 		log.Infof("node %s asks for neighbours blocks", n.Name)
-		n.blocks = n.Mesh.RequestBlocks(0)
+		n.blocks = n.Mesh.RequestBlocks(0, n)
 		if len(n.blocks) != 0 {
 			n.Verified = n.blocks[len(n.blocks)-1].Index
 			log.Infof("node %s verified chain (last verified: %d)", n.Name, n.Verified)
@@ -86,7 +86,7 @@ func (n *Node) ProcessNextBlock(data blockgen.Data) {
 					n.blocks = []blockgen.Block{b}
 				} else {
 					log.Infof("node %s still does not have any blocks", n.Name)
-					n.blocks = n.Mesh.RequestBlocks(0)
+					n.blocks = n.Mesh.RequestBlocks(0, n)
 					if len(n.blocks) != 0 {
 						n.Verified = n.blocks[len(n.blocks)-1].Index
 						log.Infof("node %s verified chain (last verified: %d)", n.Name, n.Verified)
@@ -109,7 +109,7 @@ func (n *Node) ProcessNextBlock(data blockgen.Data) {
 			if b.Index > lastIndex+1 {
 				var index = n.Verified+1
 				log.Infof("node %s requesting blocks from network from index %d", n.Name, index)
-				var received = n.Mesh.RequestBlocks(index)
+				var received = n.Mesh.RequestBlocks(index, n)
 				var chain []blockgen.Block
 				chain = append(chain, n.blocks[index-1])
 				chain = append(chain, received...)

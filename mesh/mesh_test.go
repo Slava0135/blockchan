@@ -91,23 +91,23 @@ func TestForkMeshRequestBlocks_ThreeForks(t *testing.T) {
 	for i := 0; i < 3; i++ {
 		chain = append(chain, blockgen.GenerateNextFrom(chain[i], blockgen.Data{}, nil))
 	}
-	if len(mesh.RequestBlocks(0)) != 0 {
+	if len(mesh.RequestBlocks(0, nil)) != 0 {
 		t.Fatalf("mesh found non existant blocks")
 	}
 	fork1.blocks = chain[0:2]
-	var got = len(mesh.RequestBlocks(0))
+	var got = len(mesh.RequestBlocks(0, nil))
 	var want = len(fork1.Blocks(0))
 	if got != want {
 		t.Fatalf("got %d blocks; want %d blocks", got, want)
 	}
 	fork2.blocks = chain[0:4]
-	got = len(mesh.RequestBlocks(0))
+	got = len(mesh.RequestBlocks(0, nil))
 	want = len(fork2.Blocks(0))
 	if got != want {
 		t.Fatalf("got %d blocks; want %d blocks", got, want)
 	}
 	fork3.blocks = chain[0:3]
-	got = len(mesh.RequestBlocks(0))
+	got = len(mesh.RequestBlocks(0, nil))
 	if got != want {
 		t.Fatalf("got %d blocks; want %d blocks", got, want)
 	}
@@ -135,7 +135,7 @@ func TestForkMeshRequestBlocks_IgnoreInvalidChains(t *testing.T) {
 	}
 	chain[2].Nonce += 1
 	fork.blocks = chain
-	if len(mesh.RequestBlocks(0)) != 0 {
+	if len(mesh.RequestBlocks(0, nil)) != 0 {
 		t.Fatalf("mesh accepted invalid chain")
 	}
 }
@@ -149,32 +149,22 @@ func TestForkMeshRequestBlocks_CheckIndex(t *testing.T) {
 	}
 	fork.blocks = chain
 	var from = blockgen.Index(2)
-	if mesh.RequestBlocks(from)[0].Index != from {
+	if mesh.RequestBlocks(from, nil)[0].Index != from {
 		t.Fatalf("mesh accepted chain with different index")
 	}
 }
 
-func TestForkMeshRequestBlocks_SameIndex(t *testing.T) {
+func TestForkMeshRequestBlocks_NoLoopBack(t *testing.T) {
 	var mesh = NewForkMesh()
-	var fork1 = newTestFork(mesh)
-	var fork2 = newTestFork(mesh)
-	var fork3 = newTestFork(mesh)
+	var fork = newTestFork(mesh)
 	var chain = []blockgen.Block{blockgen.GenerateGenesisBlock()}
 	for i := 0; i < 3; i++ {
 		chain = append(chain, blockgen.GenerateNextFrom(chain[i], blockgen.Data{}, nil))
 	}
-	var nextMinor = blockgen.GenerateNextFrom(chain[len(chain)-1], blockgen.Data{1}, nil)
-	var chainMinor = []blockgen.Block(chain[:])
-	chainMinor = append(chainMinor, nextMinor)
-	fork1.blocks = chainMinor
-	var nextMajor = blockgen.GenerateNextFrom(chain[len(chain)-1], blockgen.Data{2}, nil)
-	var chainMajor = []blockgen.Block(chain[:])
-	chainMajor = append(chainMajor, nextMajor)
-	fork2.blocks = chainMajor
-	fork3.blocks = fork2.blocks
-	var got = mesh.RequestBlocks(0)
-	if !got[len(got)-1].Equal(nextMajor) {
-		t.Fatalf("mesh did not prefer major chain over minor")
+	fork.blocks = chain
+	var from = blockgen.Index(2)
+	if mesh.RequestBlocks(from, fork) != nil {
+		t.Fatalf("mesh returned fork its own chain")
 	}
 }
 
@@ -209,3 +199,4 @@ func TestForkMeshDropUnverified(t *testing.T) {
 		t.Fatalf("mesh did not ask fork to drop unverified blocks")
 	}
 }
+
