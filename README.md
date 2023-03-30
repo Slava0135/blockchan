@@ -25,7 +25,7 @@ docker compose -f "docker-compose.yml" up
 To run single node in interactive mode:
 
 ```sh
-docker run -it blockchan:latest /app -genesis
+docker run -it blockchan:latest -genesis
 ```
 
 Available flags:
@@ -47,7 +47,7 @@ Usage of ./blockchan:
 Node connections are configured through arguments:
 
 ```sh
-docker run -it blockchan:latest /app localhost:8001 localhost:8002 ...
+docker run -it blockchan:latest localhost:8001 localhost:8002 ...
 ```
 
 ## Tests
