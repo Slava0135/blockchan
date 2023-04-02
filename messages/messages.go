@@ -6,6 +6,8 @@ import (
 	"slava0135/blockchan/blockgen"
 	"slava0135/blockchan/encode"
 	"strconv"
+
+	log "github.com/sirupsen/logrus"
 )
 
 const (
@@ -43,7 +45,12 @@ func PackMessage(input any) []byte {
 }
 
 func UnpackMessage(text []byte) any {
-	defer func() { _ = recover() }()
+	defer func() { 
+		var err = recover()
+		if err != nil {
+			log.Warnf("recovered error while unpacking message: %v", err)
+		} 
+	}()
 	var slices = bytes.SplitN(text, []byte{'\n'}, 3)
 	switch string(slices[0]) {
 	case sendBlock:
