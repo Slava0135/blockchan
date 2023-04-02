@@ -82,3 +82,9 @@ func TestUnpackMessage_InvalidInput(t *testing.T) {
 		t.Fatalf("accepted invalid input")
 	}
 }
+
+func FuzzUnpackMessage(f *testing.F) {
+	f.Fuzz(func(t *testing.T, text []byte) {
+		UnpackMessage(text)
+	})
+}
