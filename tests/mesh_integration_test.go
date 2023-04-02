@@ -33,7 +33,6 @@ func TestMeshAndTwoNodes(t *testing.T) {
 	node2.Name = "SECOND"
 	var stop = false
 	go runNode(node1, nodeData(0x11), &stop, true)
-	time.Sleep(10 * time.Millisecond)
 	go runNode(node2, nodeData(0x22), &stop, false)
 	time.Sleep(time.Second)
 	stop = true
@@ -59,7 +58,6 @@ func TestMeshAndThreeNodes(t *testing.T) {
 	node3.Name = "THIRD"
 	var stop = false
 	go runNode(node1, nodeData(0x11), &stop, true)
-	time.Sleep(10 * time.Millisecond)
 	go runNode(node2, nodeData(0x22), &stop, false)
 	time.Sleep(time.Second)
 	go runNode(node3, nodeData(0x33), &stop, false)
