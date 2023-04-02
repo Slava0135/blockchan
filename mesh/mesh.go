@@ -35,7 +35,6 @@ type ForkMesh struct {
 
 func (m *ForkMesh) RequestBlocks(from blockgen.Index, caller Fork) []blockgen.Block {
 	var longest []blockgen.Block
-	var chains = make(map[Fork][]blockgen.Block)
 	for fork := range m.receiveChannels {
 		if fork == caller {
 			continue
@@ -47,7 +46,6 @@ func (m *ForkMesh) RequestBlocks(from blockgen.Index, caller Fork) []blockgen.Bl
 		if len(chain) > len(longest) {
 			longest = chain
 		}
-		chains[fork] = chain
 	}
 	return longest
 }
