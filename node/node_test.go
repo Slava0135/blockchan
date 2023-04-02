@@ -202,6 +202,23 @@ func TestNodeProcessNextBlock_AcceptMissedBlock(t *testing.T) {
 	}
 }
 
+func TestNodeProcessNextBlock_RejectMissedBlock(t *testing.T) {
+	var m = newTestMesh()
+	var node = NewNode(&m)
+	var data = testData()
+	var last = m.networkBlocks[len(m.networkBlocks)-1]
+	var next = blockgen.GenerateNextFrom(last, data, nil)
+	var nextnext = blockgen.GenerateNextFrom(next, data, nil)
+	node.Enable(false)
+	next.Hash = []byte{}
+	m.networkBlocks = append(m.networkBlocks, next, nextnext)
+	go func() { m.chanToNode <- mesh.ForkBlock{Block: nextnext} }()
+	node.ProcessNextBlock(blockgen.Data{})
+	if validate.AreEqualChains(node.Blocks(0), m.networkBlocks) {
+		t.Fatalf("node verified invalid chain")
+	}
+}
+
 func TestNodeProcessNextBlock_IgnoreOldBlock(t *testing.T) {
 	var m = newTestMesh()
 	var node = NewNode(&m)

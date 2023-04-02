@@ -60,6 +60,12 @@ go test -timeout 10s -count 1 ./...
 
 Add `-v` flag for verbose output
 
+To get test coverage data:
+
+```sh
+go test -coverprofile=c.out ./... && go tool cover -html c.out -o cover.html
+```
+
 ## Algorithm
 
 * One node should be configured to generate first (genesis) block.

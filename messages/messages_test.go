@@ -55,6 +55,18 @@ func TestUnpackMessage_InvalidMsg(t *testing.T) {
 	if unpacked != nil {
 		t.Fatalf("accepted invalid message")
 	}
+	unpacked = UnpackMessage([]byte(requestBlocks))
+	if unpacked != nil {
+		t.Fatalf("accepted invalid message")
+	}
+	unpacked = UnpackMessage([]byte(sendBlock))
+	if unpacked != nil {
+		t.Fatalf("accepted invalid message")
+	}
+	unpacked = UnpackMessage([]byte(dropBlock))
+	if unpacked != nil {
+		t.Fatalf("accepted invalid message")
+	}
 }
 
 func TestPackMessage_InvalidInput(t *testing.T) {

@@ -43,6 +43,7 @@ func PackMessage(input any) []byte {
 }
 
 func UnpackMessage(text []byte) any {
+	defer func() { _ = recover() }()
 	var slices = bytes.SplitN(text, []byte{'\n'}, 3)
 	switch string(slices[0]) {
 	case sendBlock:
@@ -50,9 +51,6 @@ func UnpackMessage(text []byte) any {
 		var decoded, _ = encode.Decode(slices[2])
 		return SendBlockMsg{decoded, lastIndex}
 	case requestBlocks:
-		if len(slices) != 2 {
-			return nil
-		}
 		var index, _ = strconv.ParseUint(string(slices[1]), 10, 64)
 		return RequestBlocksMsg{index}
 	case dropBlock:
