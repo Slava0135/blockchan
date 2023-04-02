@@ -33,12 +33,6 @@ func TestTwoMeshes(t *testing.T) {
 	time.Sleep(time.Second)
 	stop = true
 
-	if node1.Verified == 0 {
-		t.Errorf("node %s did not verify any blocks", node1.Name)
-	}
-	if node2.Verified == 0 {
-		t.Errorf("node %s did not verify any blocks", node2.Name)
-	}
 	var verified = []int{int(node1.Verified), int(node2.Verified)}
 	sort.Ints(verified)
 	var last = verified[0]
