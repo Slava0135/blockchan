@@ -86,5 +86,8 @@ func TestUnpackMessage_InvalidInput(t *testing.T) {
 func FuzzUnpackMessage(f *testing.F) {
 	f.Fuzz(func(t *testing.T, text []byte) {
 		UnpackMessage(text)
+		UnpackMessage(append([]byte(sendBlock + "\n"), text...))
+		UnpackMessage(append([]byte(requestBlocks + "\n"), text...))
+		UnpackMessage(append([]byte(dropBlock + "\n"), text...))
 	})
 }

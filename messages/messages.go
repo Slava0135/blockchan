@@ -7,7 +7,7 @@ import (
 	"slava0135/blockchan/encode"
 	"strconv"
 
-	"github.com/sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 )
 
 const (
@@ -48,7 +48,7 @@ func UnpackMessage(text []byte) any {
 	defer func() { 
 		var err = recover()
 		if err != nil {
-			logrus.Errorf("recovered error while unpacking message: %v", err)
+			log.Warnf("recovered error while unpacking message: %v", err)
 		} 
 	}()
 	var slices = bytes.SplitN(text, []byte{'\n'}, 3)
