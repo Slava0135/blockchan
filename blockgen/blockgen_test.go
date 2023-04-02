@@ -150,3 +150,11 @@ func TestAreEqualBlocks_Nonce(t *testing.T) {
 		t.Fatalf("blocks with different nonce are equal")
 	}
 }
+
+func BenchmarkGenerateNextFrom(b *testing.B) {
+	var prev = GenerateGenesisBlock()
+	b.ResetTimer()
+	for i := 0; i < b.N; i += 1 {
+		prev = GenerateNextFrom(prev, Data{}, nil)
+	}
+}
