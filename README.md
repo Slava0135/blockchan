@@ -74,6 +74,20 @@ To run benchmarks only:
 go test ./... -bench . -benchmem -run ignoretests
 ```
 
+## Fuzzing
+
+To run single fuzz test:
+
+```sh
+go test >>package<< -fuzz >>name<< -run ignoretests
+```
+
+Example:
+
+```sh
+go test ./messages -fuzz . -run ignoretests
+```
+
 ## Algorithm
 
 * One node should be configured to generate first (genesis) block.
