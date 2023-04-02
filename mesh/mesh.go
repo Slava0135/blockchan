@@ -81,7 +81,7 @@ func (m *ForkMesh) RecvChan(f Fork) chan ForkBlock {
 func (m *ForkMesh) Connect(f Fork) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	m.receiveChannels[f] = make(chan ForkBlock, 100)
+	m.receiveChannels[f] = make(chan ForkBlock, 10)
 }
 
 func (m *ForkMesh) Disconnect(f Fork) {
