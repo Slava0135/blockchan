@@ -66,6 +66,14 @@ To get test coverage data:
 go test -coverprofile=c.out ./... && go tool cover -html c.out -o cover.html
 ```
 
+## Benchmarks
+
+To run benchmarks only:
+
+```sh
+go test ./... -bench . -benchmem -run ignoretests
+```
+
 ## Algorithm
 
 * One node should be configured to generate first (genesis) block.
