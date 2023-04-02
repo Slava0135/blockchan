@@ -80,7 +80,7 @@ func runNode(node *node.Node, data string, genesis bool) {
 		var d blockgen.Data
 		gen.Read(d[:])
 		node.ProcessNextBlock(d)
-		if err != nil {
+		if err == nil {
 			var blocks = node.Blocks(0)
 			for ; nextVerified <= int(node.Verified); nextVerified += 1 {
 				f.WriteString(blocks[nextVerified].String())
