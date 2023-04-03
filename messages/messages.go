@@ -44,10 +44,10 @@ func PackMessage(input any) []byte {
 
 func UnpackMessage(text []byte) (msg any, err error) {
 	var slices = bytes.SplitN(text, []byte{'\n'}, 3)
+	var gotLen = len(slices)
 	switch string(slices[0]) {
 	case sendBlock:
 		const wantLen = 3
-		var gotLen = len(slices)
 		if gotLen != wantLen {
 			return nil, fmt.Errorf("send block message got %d args instead of %d", gotLen, wantLen)
 		}
@@ -56,7 +56,6 @@ func UnpackMessage(text []byte) (msg any, err error) {
 		return SendBlockMsg{decoded, lastIndex}, nil
 	case requestBlocks:
 		const wantLen = 2
-		var gotLen = len(slices)
 		if gotLen != wantLen {
 			return nil, fmt.Errorf("request blocks message got %d args instead of %d", gotLen, wantLen)
 		}
@@ -64,7 +63,6 @@ func UnpackMessage(text []byte) (msg any, err error) {
 		return RequestBlocksMsg{index}, nil
 	case dropBlock:
 		const wantLen = 3
-		var gotLen = len(slices)
 		if gotLen != wantLen {
 			return nil, fmt.Errorf("drop block message got %d args instead of %d", gotLen, wantLen)
 		}
@@ -72,5 +70,5 @@ func UnpackMessage(text []byte) (msg any, err error) {
 		var decoded, _ = encode.Decode(slices[2])
 		return DropBlockMsg{decoded, lastIndex}, nil
 	}
-	return nil, fmt.Errorf("text did not match any message pattern")
+	return nil, fmt.Errorf("input did not match any message pattern")
 }
