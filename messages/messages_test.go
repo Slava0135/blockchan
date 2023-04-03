@@ -8,7 +8,7 @@ import (
 func TestPackMessage_SendBlock(t *testing.T) {
 	var block = blockgen.GenerateNextFrom(blockgen.GenerateGenesisBlock(), blockgen.Data{1, 2, 3}, nil)
 	var msg = PackMessage(SendBlockMsg{block, uint64(block.Index)})
-	var unpacked = UnpackMessage(msg)
+	var unpacked, _ = UnpackMessage(msg)
 	var received, ok = unpacked.(SendBlockMsg)
 	if !ok {
 		t.Fatalf("failed to determine message type")
@@ -24,7 +24,7 @@ func TestPackMessage_SendBlock(t *testing.T) {
 func TestPackMessage_AskForBlocks(t *testing.T) {
 	var index uint64 = 3
 	var msg = PackMessage(RequestBlocksMsg{index})
-	var unpacked = UnpackMessage(msg)
+	var unpacked, _ = UnpackMessage(msg)
 	var received, ok = unpacked.(RequestBlocksMsg)
 	if !ok {
 		t.Fatalf("failed to determine message type")
@@ -37,7 +37,7 @@ func TestPackMessage_AskForBlocks(t *testing.T) {
 func TestPackMessage_DropBlock(t *testing.T) {
 	var block = blockgen.GenerateNextFrom(blockgen.GenerateGenesisBlock(), blockgen.Data{1, 2, 3}, nil)
 	var msg = PackMessage(DropBlockMsg{block, uint64(block.Index)})
-	var unpacked = UnpackMessage(msg)
+	var unpacked, _ = UnpackMessage(msg)
 	var received, ok = unpacked.(DropBlockMsg)
 	if !ok {
 		t.Fatalf("failed to determine message type")
@@ -51,20 +51,20 @@ func TestPackMessage_DropBlock(t *testing.T) {
 }
 
 func TestUnpackMessage_InvalidMsg(t *testing.T) {
-	var unpacked = UnpackMessage([]byte(requestBlocks))
-	if unpacked != nil {
+	var _, err = UnpackMessage([]byte(requestBlocks))
+	if err == nil {
 		t.Fatalf("accepted invalid message")
 	}
-	unpacked = UnpackMessage([]byte(requestBlocks))
-	if unpacked != nil {
+	_, err = UnpackMessage([]byte(requestBlocks))
+	if err == nil {
 		t.Fatalf("accepted invalid message")
 	}
-	unpacked = UnpackMessage([]byte(sendBlock))
-	if unpacked != nil {
+	_, err = UnpackMessage([]byte(sendBlock))
+	if err == nil {
 		t.Fatalf("accepted invalid message")
 	}
-	unpacked = UnpackMessage([]byte(dropBlock))
-	if unpacked != nil {
+	_, err = UnpackMessage([]byte(dropBlock))
+	if err == nil {
 		t.Fatalf("accepted invalid message")
 	}
 }
@@ -77,17 +77,18 @@ func TestPackMessage_InvalidInput(t *testing.T) {
 }
 
 func TestUnpackMessage_InvalidInput(t *testing.T) {
-	var unpacked = UnpackMessage([]byte("marko\nzajc"))
-	if unpacked != nil {
+	var _, err = UnpackMessage([]byte("marko\nzajc"))
+	if err == nil {
 		t.Fatalf("accepted invalid input")
 	}
 }
 
 func FuzzUnpackMessage(f *testing.F) {
+	testcases := []string{"", requestBlocks, sendBlock, dropBlock}
+    for _, tc := range testcases {
+        f.Add([]byte(tc))
+    }
 	f.Fuzz(func(t *testing.T, text []byte) {
 		UnpackMessage(text)
-		UnpackMessage(append([]byte(sendBlock + "\n"), text...))
-		UnpackMessage(append([]byte(requestBlocks + "\n"), text...))
-		UnpackMessage(append([]byte(dropBlock + "\n"), text...))
 	})
 }

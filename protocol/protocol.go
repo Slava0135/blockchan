@@ -65,7 +65,7 @@ func (f *RemoteFork) Listen(shutdown chan struct{}) {
 				}()
 			}
 		case msg := <-f.Link.RecvChan:
-			var i = messages.UnpackMessage(msg)
+			var i, _ = messages.UnpackMessage(msg)
 			switch v := i.(type) {
 			case messages.SendBlockMsg:
 				go f.mesh.SendBlockTo(f.mentor, mesh.ForkBlock{Block: v.Block, From: f})
@@ -98,7 +98,7 @@ func (f *RemoteFork) Listen(shutdown chan struct{}) {
 			for {
 				select {
 				case msg := <-f.Link.RecvChan:
-					var got = messages.UnpackMessage(msg)
+					var got, _ = messages.UnpackMessage(msg)
 					var b, ok = got.(messages.SendBlockMsg)
 					if ok && b.Block.Index >= index {
 						chain[b.Block.Index] = b.Block
