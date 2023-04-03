@@ -45,11 +45,12 @@ func PackMessage(input any) []byte {
 func UnpackMessage(text []byte) (msg any, err error) {
 	var slices = bytes.SplitN(text, []byte{'\n'}, 3)
 	var gotLen = len(slices)
+	var msgType = string(slices[0])
 	switch string(slices[0]) {
 	case sendBlock:
 		const wantLen = 3
 		if gotLen != wantLen {
-			return nil, fmt.Errorf("send block message got %d args instead of %d", gotLen, wantLen)
+			return nil, fmt.Errorf("<%s> message got %d args instead of %d", msgType, gotLen, wantLen)
 		}
 		var lastIndex, _ = strconv.ParseUint(string(slices[1]), 10, 64)
 		var decoded, _ = encode.Decode(slices[2])
@@ -57,14 +58,14 @@ func UnpackMessage(text []byte) (msg any, err error) {
 	case requestBlocks:
 		const wantLen = 2
 		if gotLen != wantLen {
-			return nil, fmt.Errorf("request blocks message got %d args instead of %d", gotLen, wantLen)
+			return nil, fmt.Errorf("<%s> message got %d args instead of %d", msgType, gotLen, wantLen)
 		}
 		var index, _ = strconv.ParseUint(string(slices[1]), 10, 64)
 		return RequestBlocksMsg{index}, nil
 	case dropBlock:
 		const wantLen = 3
 		if gotLen != wantLen {
-			return nil, fmt.Errorf("drop block message got %d args instead of %d", gotLen, wantLen)
+			return nil, fmt.Errorf("<%s> message got %d args instead of %d", msgType, gotLen, wantLen)
 		}
 		var lastIndex, _ = strconv.ParseUint(string(slices[1]), 10, 64)
 		var decoded, _ = encode.Decode(slices[2])
