@@ -46,7 +46,7 @@ func UnpackMessage(text []byte) (msg any, err error) {
 	var slices = bytes.SplitN(text, []byte{'\n'}, 3)
 	var gotLen = len(slices)
 	var msgType = string(slices[0])
-	switch string(slices[0]) {
+	switch msgType {
 	case sendBlock:
 		const wantLen = 3
 		if gotLen != wantLen {
