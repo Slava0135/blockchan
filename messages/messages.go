@@ -6,8 +6,6 @@ import (
 	"slava0135/blockchan/blockgen"
 	"slava0135/blockchan/encode"
 	"strconv"
-
-	log "github.com/sirupsen/logrus"
 )
 
 const (
@@ -44,26 +42,35 @@ func PackMessage(input any) []byte {
 	return nil
 }
 
-func UnpackMessage(text []byte) any {
-	defer func() { 
-		var err = recover()
-		if err != nil {
-			log.Warnf("recovered error while unpacking message: %v", err)
-		} 
-	}()
+func UnpackMessage(text []byte) (msg any, err error) {
 	var slices = bytes.SplitN(text, []byte{'\n'}, 3)
 	switch string(slices[0]) {
 	case sendBlock:
+		const wantLen = 3
+		var gotLen = len(slices)
+		if gotLen != wantLen {
+			return nil, fmt.Errorf("send block message got %d args instead of %d", gotLen, wantLen)
+		}
 		var lastIndex, _ = strconv.ParseUint(string(slices[1]), 10, 64)
 		var decoded, _ = encode.Decode(slices[2])
-		return SendBlockMsg{decoded, lastIndex}
+		return SendBlockMsg{decoded, lastIndex}, nil
 	case requestBlocks:
+		const wantLen = 2
+		var gotLen = len(slices)
+		if gotLen != wantLen {
+			return nil, fmt.Errorf("request blocks message got %d args instead of %d", gotLen, wantLen)
+		}
 		var index, _ = strconv.ParseUint(string(slices[1]), 10, 64)
-		return RequestBlocksMsg{index}
+		return RequestBlocksMsg{index}, nil
 	case dropBlock:
+		const wantLen = 3
+		var gotLen = len(slices)
+		if gotLen != wantLen {
+			return nil, fmt.Errorf("drop block message got %d args instead of %d", gotLen, wantLen)
+		}
 		var lastIndex, _ = strconv.ParseUint(string(slices[1]), 10, 64)
 		var decoded, _ = encode.Decode(slices[2])
-		return DropBlockMsg{decoded, lastIndex}
+		return DropBlockMsg{decoded, lastIndex}, nil
 	}
-	return nil
+	return nil, fmt.Errorf("text did not match any message pattern")
 }

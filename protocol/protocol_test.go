@@ -27,7 +27,7 @@ func TestListen_SendBlock(t *testing.T) {
 	go remote.Listen(nil)
 	time.Sleep(time.Second)
 	go mesh.SendBlockBroadcast(nil, block)
-	var unpacked = messages.UnpackMessage(<-link.SendChan)
+	var unpacked, _ = messages.UnpackMessage(<-link.SendChan)
 	var received, ok = unpacked.(messages.SendBlockMsg)
 	if !ok {
 		t.Fatalf("wrong message type")
@@ -212,7 +212,7 @@ func TestListen_AskDropBlock(t *testing.T) {
 	go remote.Listen(nil)
 	time.Sleep(time.Second)
 	go mesh.DropUnverifiedBlocks(remote, block)
-	var unpacked = messages.UnpackMessage(<-link.SendChan)
+	var unpacked, _ = messages.UnpackMessage(<-link.SendChan)
 	var received, ok = unpacked.(messages.DropBlockMsg)
 	if !ok {
 		t.Fatalf("wrong message type")
